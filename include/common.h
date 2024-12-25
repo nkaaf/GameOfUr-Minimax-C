@@ -11,6 +11,7 @@
 #define ROSETTE_SAFE (9)
 #define MIN_DICE_THROW (0)
 #define MAX_DICE_THROW (4)
+#define DICE_RANGE_TRUE (MAX_DICE_THROW - MIN_DICE_THROW + 1)
 
 #define MASK_PIECE_0 ((uint32_t)0xF)
 #define MASK_PIECE_1 ((uint32_t)(MASK_PIECE_0 << 4))

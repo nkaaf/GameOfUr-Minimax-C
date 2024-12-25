@@ -16,7 +16,7 @@ state_t* state_init(const short score_1, const short score_2, const uint32_t pie
         assert(false && "malloc failed");
     }
 
-    state->children = malloc(NUM_OF_PIECES_PER_PLAYER * (MAX_DICE_THROW - MIN_DICE_THROW + 1) * sizeof(state_t*));
+    state->children = malloc(NUM_OF_PIECES_PER_PLAYER * DICE_RANGE_TRUE * sizeof(state_t*));
     if (!state->children)
     {
         state_free(state);

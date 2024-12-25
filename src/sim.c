@@ -77,8 +77,10 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
             // Move is valid, but piece is not in finish
 
             size_t piece_index_other;
-            if (any_piece_on_field(pieces_other_player, piece_field_dest, &piece_index_other))
+            if (6 <= piece_field_dest && piece_field_dest <= 13 &&
+                any_piece_on_field(pieces_other_player, piece_field_dest, &piece_index_other))
             {
+                // This can only be reached, if next field on war zone
                 // Piece of other player is caught and returned to start
                 state_piece_move(state_new, state_current->player_other, piece_index_other, FIELD_START);
             }
@@ -98,7 +100,7 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
                                state_current->pieces_2, state_current->player_current, state_current->player_other);
 
         state_new->dice = dice;
-        state_new->moved_piece = piece_index;
+        state_new->moved_piece = -1; // no piece was moved
     }
 
     if (!state_new->second_throw)
@@ -147,7 +149,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
         // Base points
         points_total += evaluation_base_points[piece_field];
         // Rosette Bonus
-        points_total += evaluation_rosette_bonus[piece_field] * (float) EVAL_MULTIPLIER_ROSETTE;
+        points_total += evaluation_rosette_bonus[piece_field] * (float)EVAL_MULTIPLIER_ROSETTE;
 
         if (piece_field == FIELD_START || piece_field == 14 || piece_field == 15 || piece_field == FIELD_FINISH)
         {
@@ -165,7 +167,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
                 count_killable_pieces_of_other_player += 1;
             }
         }
-        points_total += (float) (count_killable_pieces_of_other_player * EVAL_MULTIPLIER_KILLABLE);
+        points_total += (float)(count_killable_pieces_of_other_player * EVAL_MULTIPLIER_KILLABLE);
 
         // Killed by other player
         if (6 <= piece_field)
@@ -178,7 +180,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
                     count_attacker_pieces_of_other_player += 1;
                 }
             }
-            points_total += (float) (count_attacker_pieces_of_other_player * EVAL_MULTIPLIER_ATTACKER);
+            points_total += (float)(count_attacker_pieces_of_other_player * EVAL_MULTIPLIER_ATTACKER);
         }
     }
 
@@ -220,7 +222,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
 
     const bool kill_happens = count_pieces_other_player_start_new != count_pieces_other_player_start_source;
 
-    points_total += (float) kill_happens * EVAL_ADDER_KILL_HAPPENS;
+    points_total += (float)kill_happens * EVAL_ADDER_KILL_HAPPENS;
 
     return points_total;
 }
