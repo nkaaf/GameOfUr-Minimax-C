@@ -18,6 +18,8 @@
 #define MASK_PIECE_2 ((uint32_t)(MASK_PIECE_1 << 4))
 #define MASK_PIECE_3 ((uint32_t)(MASK_PIECE_2 << 4))
 #define MASK_PIECE_4 ((uint32_t)(MASK_PIECE_3 << 4))
+#define MASK_PIECE_5 ((uint32_t)(MASK_PIECE_4 << 4))
+#define MASK_PIECE_6 ((uint32_t)(MASK_PIECE_5 << 4))
 
 #define GET_PIECE_MASK(var_piece_mask, piece_index)                                                                    \
     uint32_t(var_piece_mask);                                                                                          \
@@ -42,6 +44,14 @@
         else if ((piece_index) == 4)                                                                                   \
         {                                                                                                              \
             (var_piece_mask) = MASK_PIECE_4;                                                                           \
+        }                                                                                                              \
+        else if ((piece_index) == 5)                                                                                   \
+        {                                                                                                              \
+            (var_piece_mask) = MASK_PIECE_5;                                                                           \
+        }                                                                                                              \
+        else if ((piece_index) == 6)                                                                                   \
+        {                                                                                                              \
+            (var_piece_mask) = MASK_PIECE_6;                                                                           \
         }                                                                                                              \
         else                                                                                                           \
         {                                                                                                              \

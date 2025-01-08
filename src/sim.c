@@ -1,7 +1,10 @@
 #include "sim.h"
 
+#include <stdio.h>
+
 #include "common.h"
 #include "config.h"
+
 
 state_t* simulate(const state_t* state_current, const short piece_index, const short dice)
 {
@@ -110,6 +113,90 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
     }
 
     return state_new;
+}
+
+char get_best_move(const state_t* state_root)
+{
+    state_t* state_current = (state_t*)state_root;
+
+    size_t step_current = 0;
+
+    while (state_current)
+    {
+        for (size_t step = step_current; step < STEPS_IN_FUTURE; step++)
+        {
+            printf("Simulate step: %lu\n", step);
+            for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
+            {
+                printf("Simulate piece: %hd\n", piece_index);
+                for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
+                {
+                    printf("Simulate dice: %hd\n", dice);
+
+                    state_t* state_new = simulate(state_current, piece_index, dice);
+                    if (!state_new)
+                    {
+                        // Movement is not possible
+                        continue;
+                    }
+
+                    printf("Simulated id: %lu\n", state_new->id);
+
+                    state_add_child(state_current, state_new);
+
+                    state_check_win(state_new);
+
+                    const float score = evaluate(state_current, state_new);
+                    state_new->eval = score;
+                }
+                printf("\n");
+            }
+
+
+            if (state_get_children_count(state_current) == 0)
+            {
+                // No move was possible
+
+                // TODO: What evaluation score should this move have
+                state_t* state_new =
+                    state_init(state_current->score_1, state_current->score_2, state_current->pieces_1,
+                               state_current->pieces_2, state_current->player_current, state_current->player_other);
+                state_swap_player(state_new);
+
+                state_add_child(state_current, state_new);
+            }
+
+            if (step != STEPS_IN_FUTURE - 1)
+            {
+                state_current = state_get_next_child(state_current);
+            }
+        }
+
+        step_current = STEPS_IN_FUTURE;
+
+        const state_t* state_parent = state_get_parent(state_current);
+        step_current -= 1;
+        while (state_parent && !state_has_next_child(state_parent))
+        {
+            step_current -= 1;
+            state_parent = state_get_parent(state_parent);
+        }
+        if (!state_parent)
+        {
+            // state_parent is root
+            // Simulation should end
+            state_current = NULL;
+        }
+        else
+        {
+            state_current = state_get_next_child((state_t*)state_parent);
+        }
+    }
+
+    // TODO: To implement
+    //  Return value is the index of the piece (zero-based)
+
+    return 0;
 }
 
 float evaluate(const state_t* state_current, const state_t* state_new)
