@@ -115,8 +115,31 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
     return state_new;
 }
 
-char get_best_move(const state_t* state_root)
+void simulate_wrapper(state_t* state_current, const short piece_index, const short dice)
 {
+    printf("Simulate dice: %hd\n", dice);
+
+    state_t* state_new = simulate(state_current, piece_index, dice);
+    if (!state_new)
+    {
+        // Movement is not possible
+        return;
+    }
+
+    printf("Simulated id: %lu\n", state_new->id);
+
+    state_add_child(state_current, state_new);
+
+    state_check_win(state_new);
+
+    const float score = evaluate(state_current, state_new);
+    state_new->eval = score;
+}
+
+char get_best_move(const state_t* state_root, const short dice_first)
+{
+    // dice_first == -1 -> all dice throws are calculated on first level
+
     state_t* state_current = (state_t*)state_root;
 
     size_t step_current = 0;
@@ -129,25 +152,16 @@ char get_best_move(const state_t* state_root)
             for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
             {
                 printf("Simulate piece: %hd\n", piece_index);
-                for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
+                if (dice_first != -1 && step_current == 0)
                 {
-                    printf("Simulate dice: %hd\n", dice);
-
-                    state_t* state_new = simulate(state_current, piece_index, dice);
-                    if (!state_new)
+                    simulate_wrapper(state_current, piece_index, dice_first);
+                }
+                else
+                {
+                    for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
                     {
-                        // Movement is not possible
-                        continue;
+                        simulate_wrapper(state_current, piece_index, dice);
                     }
-
-                    printf("Simulated id: %lu\n", state_new->id);
-
-                    state_add_child(state_current, state_new);
-
-                    state_check_win(state_new);
-
-                    const float score = evaluate(state_current, state_new);
-                    state_new->eval = score;
                 }
                 printf("\n");
             }

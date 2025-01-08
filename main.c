@@ -29,7 +29,7 @@ int main(void)
 #endif /* VISUALIZE */
     count++;
 
-    get_best_move(state_root);
+    get_best_move(state_root, 0);
 
 #if VISUALIZE
     {
