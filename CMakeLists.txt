@@ -4,6 +4,7 @@ project(GameOfUr_C C)
 set(CMAKE_C_STANDARD 11)
 
 include_directories("include")
+include_directories("config")
 
 set(SOURCES_Game
         src/common.c

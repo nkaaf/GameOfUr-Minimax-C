@@ -29,7 +29,6 @@ void test0()
     state_t* state_expected = set_up_state();
     state_swap_player(state_expected);
     state_expected->dice = dice;
-    state_expected->moved_piece = piece_index;
 
     const state_t* state_new = simulate(state_current, piece_index, dice);
 
