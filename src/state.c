@@ -30,6 +30,8 @@ state_t* state_init(const short score_1, const short score_2, const uint32_t pie
     state->pieces_1 = pieces_1;
     state->pieces_2 = pieces_2;
 
+    state->parent = NULL;
+
     state->second_throw = false;
     state->child_iter = -1;
     state->child_iter_max = -1;
