@@ -7,4 +7,4 @@ void visualize_graph(state_t* state_root);
 
 void visualize_path(state_t* state_root);
 
-#endif //VISUALIZE_H
+#endif // VISUALIZE_H

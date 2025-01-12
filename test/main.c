@@ -222,7 +222,6 @@ void test9()
     assert(state->pieces_1 == 0xA9999);
     state_piece_move(state, 1, 4, 0x9);
     assert(state->pieces_1 == 0x99999);
-
 }
 
 int main()

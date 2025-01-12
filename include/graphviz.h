@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-void visualize_init(const char *filename);
+void visualize_init(const char* filename);
 
 void visualize_free();
 
@@ -13,4 +13,4 @@ void visualize_add_edge(size_t id_start, size_t id_end);
 
 void visualize_finalize();
 
-#endif //GRAPHVIZ_H
+#endif // GRAPHVIZ_H
