@@ -5,6 +5,10 @@
 #include "common.h"
 #include "config.h"
 
+#if VISUALIZE
+#include "visualize.h"
+#endif /* VISUALIZE */
+
 
 state_t* simulate(const state_t* state_current, const short piece_index, const short dice)
 {
@@ -136,11 +140,37 @@ void simulate_wrapper(state_t* state_current, const short piece_index, const sho
     state_new->eval = score;
 }
 
-char get_best_move(const state_t* state_root, const short dice_first)
+void cleanup_child(state_t* state, size_t index_current_child)
+{
+    while (index_current_child <= state->child_iter_max && state->children[index_current_child])
+    {
+        cleanup_child(state->children[index_current_child], 0);
+        index_current_child++;
+    }
+
+    state_free(state);
+}
+
+void cleanup(state_t* state_root) { cleanup_child(state_root, 0); }
+
+void reset_child_iter(state_t* state, size_t index_current_child)
+{
+    while (index_current_child <= state->child_iter_max && state->children[index_current_child])
+    {
+        reset_child_iter(state->children[index_current_child], 0);
+        index_current_child++;
+    }
+
+    state->child_iter = -1;
+}
+
+void reset_all_state_child_iters(state_t* state_root) { reset_child_iter(state_root, 0); }
+
+char get_best_move(state_t* state_root, const short dice_first)
 {
     // dice_first == -1 -> all dice throws are calculated on first level
 
-    state_t* state_current = (state_t*)state_root;
+    state_t* state_current = state_root;
 
     size_t step_current = 0;
 
@@ -154,10 +184,12 @@ char get_best_move(const state_t* state_root, const short dice_first)
                 printf("Simulate piece: %hd\n", piece_index);
                 if (dice_first != -1 && step_current == 0)
                 {
+                    // If first dice throw is known, simulate only this.
                     simulate_wrapper(state_current, piece_index, dice_first);
                 }
                 else
                 {
+                    // Simulate all possible dice throws
                     for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
                     {
                         simulate_wrapper(state_current, piece_index, dice);
@@ -171,11 +203,12 @@ char get_best_move(const state_t* state_root, const short dice_first)
             {
                 // No move was possible
 
-                // TODO: What evaluation score should this move have
                 state_t* state_new =
                     state_init(state_current->score_1, state_current->score_2, state_current->pieces_1,
                                state_current->pieces_2, state_current->player_current, state_current->player_other);
                 state_swap_player(state_new);
+
+                state_new->eval = evaluate(state_current, state_new);
 
                 state_add_child(state_current, state_new);
             }
@@ -186,29 +219,24 @@ char get_best_move(const state_t* state_root, const short dice_first)
             }
         }
 
-        step_current = STEPS_IN_FUTURE;
-
-        const state_t* state_parent = state_get_parent(state_current);
-        step_current -= 1;
-        while (state_parent && !state_has_next_child(state_parent))
-        {
-            step_current -= 1;
-            state_parent = state_get_parent(state_parent);
-        }
-        if (!state_parent)
-        {
-            // state_parent is root
-            // Simulation should end
-            state_current = NULL;
-        }
-        else
-        {
-            state_current = state_get_next_child((state_t*)state_parent);
-        }
+        step_current = STEPS_IN_FUTURE - 1;
+        state_current = state_get_parent_that_has_next_child(state_current, &step_current);
     }
 
     // TODO: To implement
     //  Return value is the index of the piece (zero-based)
+
+
+#if VISUALIZE
+    reset_all_state_child_iters(state_root);
+    visualize_graph(state_root);
+
+    reset_all_state_child_iters(state_root);
+    visualize_path(state_root);
+#endif /* VISUALIZE */
+
+    // Clean Up
+    cleanup(state_root);
 
     return 0;
 }

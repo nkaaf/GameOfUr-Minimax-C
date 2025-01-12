@@ -10,7 +10,7 @@
 #define FIELD_START ((uint8_t)1)
 #define ROSETTE_SAFE (9)
 #define MIN_DICE_THROW (0)
-#define MAX_DICE_THROW (4)
+#define MAX_DICE_THROW (1)
 #define DICE_RANGE_TRUE (MAX_DICE_THROW - MIN_DICE_THROW + 1)
 
 #define MASK_PIECE_0 ((uint32_t)0xF)

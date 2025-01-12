@@ -1,16 +1,10 @@
 #ifndef VISUALIZE_H
 #define VISUALIZE_H
 
-#include <stddef.h>
+#include "state.h"
 
-void visualize_init(const char *filename);
+void visualize_graph(state_t* state_root);
 
-void visualize_free();
-
-void visualize_add_node(size_t id, float eval, short dice, short moved_piece, short player_current);
-
-void visualize_add_edge(size_t id_start, size_t id_end);
-
-void visualize_finalize();
+void visualize_path(state_t* state_root);
 
 #endif //VISUALIZE_H

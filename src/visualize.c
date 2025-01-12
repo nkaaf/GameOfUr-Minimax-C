@@ -1,60 +1,117 @@
 #include "visualize.h"
 
+#include "config.h"
+#include "graphviz.h"
+
 #include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
 
-FILE* file;
-
-void visualize_init(const char* filename)
+void visualize_graph(state_t* state_root)
 {
-    file = fopen(filename, "w");
-    if (!file)
+    visualize_init(VISUALIZE_GRAPH_FILE_PATH);
+
+    state_t* state_current = state_root;
+
+    bool first = true;
+    while (state_current)
     {
-        assert(false && "fopen failed");
+        short player_current;
+        if (first)
+        {
+            player_current = 1;
+            first = false;
+        }
+        else if (state_current->second_throw)
+        {
+            player_current = state_current->player_current;
+        }
+        else
+        {
+            player_current = state_current->player_other;
+        }
+
+        visualize_add_node(state_current->id, state_current->eval, state_current->dice, state_current->moved_piece,
+                           player_current);
+
+        if (state_current->child_iter_max != -1)
+        {
+            // Node has children
+
+            for (size_t iter = 0; iter <= state_current->child_iter_max; iter++)
+            {
+                const state_t* child = state_current->children[iter];
+                assert(child && "child is NULL");
+
+                visualize_add_edge(state_current->id, child->id);
+            }
+        }
+
+        if (state_has_next_child(state_current))
+        {
+            // Current state has another child
+            state_current = state_get_next_child(state_current);
+        }
+        else
+        {
+            state_current = state_get_parent_that_has_next_child(state_current, NULL);
+        }
     }
 
-    fputs("graph Graph_Minimax {\n", file);
+    visualize_finalize();
+    visualize_free();
 }
 
-void visualize_free()
+void visualize_path(state_t* state_root)
 {
-    if (file)
+    visualize_init(VISUALIZE_GRAPH_PATH_FILE_PATH);
+
+    state_t* state_current = state_root;
+
+    size_t step_current = -1;
+    bool first = true;
+    while (state_current)
     {
-        fclose(file);
+        if (first || (step_current < VISUALIZE_THROWS_COUNT && state_current->dice == visualize_throws[step_current]))
+        {
+            short player_current;
+            if (first)
+            {
+                player_current = 1;
+                first = false;
+            }
+            else if (state_current->second_throw)
+            {
+                player_current = state_current->player_current;
+            }
+            else
+            {
+                player_current = state_current->player_other;
+            }
+
+            visualize_add_node(state_current->id, state_current->eval, state_current->dice, state_current->moved_piece,
+                               player_current);
+
+            if (state_get_parent(state_current))
+            {
+                visualize_add_edge(state_get_parent(state_current)->id, state_current->id);
+            }
+
+            if (state_has_next_child(state_current))
+            {
+                // Current state has another child
+                state_current = state_get_next_child(state_current);
+                step_current++;
+            }
+            else
+            {
+                state_current = state_get_parent_that_has_next_child(state_current, &step_current);
+            }
+        }
+        else
+        {
+            state_current = state_get_parent_that_has_next_child(state_current, &step_current);
+        }
     }
-}
 
-void visualize_add_node(const size_t id, const float eval, const short dice, const short moved_piece,
-                        const short player_current)
-{
-    assert(file && "file is NULL");
-
-    char* color;
-    if (player_current == 1)
-    {
-        color = "green";
-    }
-    else if (player_current == 2)
-    {
-        color = "red";
-    }
-    else
-    {
-        assert(false && "player_current is invalid");
-    }
-
-    fprintf(file, "\t%lu [label=\"ID: %lu\nE: %f\nD: %d\nMP: %d\" color=%s]\n", id, id, eval, dice, moved_piece, color);
-}
-
-void visualize_add_edge(const size_t id_start, const size_t id_end)
-{
-    fprintf(file, "\t%lu -- %lu\n", id_start, id_end);
-}
-
-void visualize_finalize()
-{
-    assert(file && "file is NULL");
-
-    fputs("}\n", file);
+    visualize_finalize();
+    visualize_free();
 }

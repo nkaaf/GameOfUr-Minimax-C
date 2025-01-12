@@ -178,3 +178,33 @@ bool state_equals(const state_t* state1, const state_t* state2)
         state1->children == state1->children && state1->eval == state1->eval &&
         state1->child_iter == state1->child_iter && state1->child_iter_max == state1->child_iter_max;
 }
+
+state_t* state_get_parent_that_has_next_child(state_t* state, size_t* step_count)
+{
+    size_t tmp;
+    if (!step_count)
+    {
+        step_count = &tmp;
+    }
+
+    // Determine parent state, which has another child
+    do
+    {
+        state = state_get_parent(state);
+        (*step_count)--;
+    }
+    while (state && !state_has_next_child(state));
+    if (state)
+    {
+        // Get the new child from the parent
+        state = state_get_next_child(state);
+        (*step_count)++;
+    }
+    else
+    {
+        // Every node has been visualize => state_current is now the parent of state_root
+        state = NULL;
+    }
+
+    return state;
+}

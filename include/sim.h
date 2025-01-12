@@ -6,7 +6,7 @@
 // Public only for testing!
 state_t* simulate(const state_t* state_current, short piece_index, short dice);
 
-char get_best_move(const state_t* state_root, short dice_first);
+char get_best_move(state_t* state_root, short dice_first);
 
 float evaluate(const state_t* state_current, const state_t* state_new);
 

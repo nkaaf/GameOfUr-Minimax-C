@@ -9,7 +9,7 @@
 #define PLAYER_1_MIN (true)
 #define ROSETTE_9_IS_SAFE (true)
 
-#define NUM_OF_PIECES_PER_PLAYER (7)
+#define NUM_OF_PIECES_PER_PLAYER (2)
 static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 &&
               "Higher numbers are not implemented.");
 
@@ -37,6 +37,8 @@ static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 &&
 
 #define VISUALIZE (true)
 #define VISUALIZE_THROWS_COUNT (5)
+#define VISUALIZE_GRAPH_FILE_PATH ("Graph.gv")
+#define VISUALIZE_GRAPH_PATH_FILE_PATH ("Graph_Path.gv")
 const static short visualize_throws[] = {1, 1, 1, 0, 0};
 
 const static float evaluation_base_points[] = {EVAL_POINT_FINISH,
