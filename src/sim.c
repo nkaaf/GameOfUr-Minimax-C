@@ -140,7 +140,7 @@ void simulate_wrapper(state_t* state_current, const short piece_index, const sho
     state_new->eval = score;
 }
 
-void cleanup_child(state_t* state, size_t index_current_child)
+void cleanup_child(state_t* state, int index_current_child)
 {
     while (index_current_child <= state->child_iter_max && state->children[index_current_child])
     {
@@ -153,7 +153,7 @@ void cleanup_child(state_t* state, size_t index_current_child)
 
 void cleanup(state_t* state_root) { cleanup_child(state_root, 0); }
 
-void reset_child_iter(state_t* state, size_t index_current_child)
+void reset_child_iter(state_t* state, int index_current_child)
 {
     while (index_current_child <= state->child_iter_max && state->children[index_current_child])
     {
