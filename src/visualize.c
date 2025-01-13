@@ -52,7 +52,7 @@ void visualize_graph(state_t* state_root)
         }
         else
         {
-            state_current = state_get_parent_that_has_next_child(state_current, NULL);
+            state_current = state_get_next_child_of_parent_recursive(state_current, NULL);
         }
     }
 
@@ -103,12 +103,12 @@ void visualize_path(state_t* state_root)
             }
             else
             {
-                state_current = state_get_parent_that_has_next_child(state_current, &step_current);
+                state_current = state_get_next_child_of_parent_recursive(state_current, &step_current);
             }
         }
         else
         {
-            state_current = state_get_parent_that_has_next_child(state_current, &step_current);
+            state_current = state_get_next_child_of_parent_recursive(state_current, &step_current);
         }
     }
 

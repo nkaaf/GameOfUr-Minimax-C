@@ -220,7 +220,7 @@ char get_best_move(state_t* state_root, const short dice_first)
         }
 
         step_current = STEPS_IN_FUTURE - 1;
-        state_current = state_get_parent_that_has_next_child(state_current, &step_current);
+        state_current = state_get_next_child_of_parent_recursive(state_current, &step_current);
     }
 
     // TODO: To implement
