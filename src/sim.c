@@ -307,25 +307,22 @@ char get_best_move(state_t* state_root, const short dice_first)
 
 float evaluate(const state_t* state_current, const state_t* state_new)
 {
-    // The current player is the player that has done the move.
-    const short player_current = state_current->player_current;
-    assert((player_current == 1 || player_current == 2) && "Incorrect player");
+    const short player_to_maximize = PLAYER_TO_MAX;
+    assert((player_to_maximize == 1 || player_to_maximize == 2) && "Incorrect player");
 
-    // Evaluation of the new piece positions; pov of current player
-
-    const uint32_t pieces_new_player_current = player_current == 1 ? state_new->pieces_1 : state_new->pieces_2;
-    const uint32_t pieces_new_player_other = player_current == 1 ? state_new->pieces_2 : state_new->pieces_1;
-    const uint32_t pieces_current_player_other = state_new->second_throw && player_current == 1
+    const uint32_t pieces_new_player_max = player_to_maximize == 1 ? state_new->pieces_1 : state_new->pieces_2;
+    const uint32_t pieces_new_player_min = player_to_maximize == 1 ? state_new->pieces_2 : state_new->pieces_1;
+    const uint32_t pieces_current_player_min = state_new->second_throw && player_to_maximize == 1
         ? state_current->pieces_2
         : state_new->second_throw ? state_current->pieces_1
-        : player_current == 1     ? state_current->pieces_2
+        : player_to_maximize == 1 ? state_current->pieces_2
                                   : state_current->pieces_1;
 
     float points_total = 0.0f;
 
     for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
     {
-        PIECE_FIELD_GET(piece_field, pieces_new_player_current, piece_index);
+        PIECE_FIELD_GET(piece_field, pieces_new_player_max, piece_index);
 
         // Base points
         points_total += evaluation_base_points[piece_field];
@@ -343,7 +340,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
         short count_killable_pieces_of_other_player = 0;
         for (short i = 1; i <= MAX_DICE_THROW; i++)
         {
-            if (any_piece_on_field(pieces_new_player_other, piece_field + i, NULL))
+            if (any_piece_on_field(pieces_new_player_min, piece_field + i, NULL))
             {
                 count_killable_pieces_of_other_player += 1;
             }
@@ -356,7 +353,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
             short count_attacker_pieces_of_other_player = 0;
             for (short i = 1; i <= MAX_DICE_THROW; i++)
             {
-                if (any_piece_on_field(pieces_new_player_other, piece_field - i, NULL))
+                if (any_piece_on_field(pieces_new_player_min, piece_field - i, NULL))
                 {
                     count_attacker_pieces_of_other_player += 1;
                 }
@@ -365,29 +362,31 @@ float evaluate(const state_t* state_current, const state_t* state_new)
         }
     }
 
-    // Improvement of state
-    short count_pieces_other_player_start_current = 0;
-    for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
+    if (PLAYER_TO_MAX == state_current->player_current)
     {
-        PIECE_FIELD_GET(piece_field, pieces_current_player_other, i);
-        if (piece_field == FIELD_START)
+        // Improvement of state
+        short count_pieces_other_player_start_current = 0;
+        for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
         {
-            count_pieces_other_player_start_current += 1;
+            PIECE_FIELD_GET(piece_field, pieces_current_player_min, i);
+            if (piece_field == FIELD_START)
+            {
+                count_pieces_other_player_start_current += 1;
+            }
         }
-    }
-    short count_pieces_other_player_start_new = 0;
-    for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
-    {
-        PIECE_FIELD_GET(piece_field, pieces_new_player_other, i);
-        if (piece_field == FIELD_START)
+        short count_pieces_other_player_start_new = 0;
+        for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
         {
-            count_pieces_other_player_start_new += 1;
+            PIECE_FIELD_GET(piece_field, pieces_new_player_min, i);
+            if (piece_field == FIELD_START)
+            {
+                count_pieces_other_player_start_new += 1;
+            }
         }
+
+        const bool kill_happens = count_pieces_other_player_start_new != count_pieces_other_player_start_current;
+        points_total += (float)kill_happens * EVAL_ADDER_KILL_HAPPENS;
     }
-
-    const bool kill_happens = count_pieces_other_player_start_new != count_pieces_other_player_start_current;
-
-    points_total += (float)kill_happens * EVAL_ADDER_KILL_HAPPENS;
 
     return points_total;
 }

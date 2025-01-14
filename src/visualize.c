@@ -16,7 +16,7 @@ void visualize_graph(state_t* state_root)
         const short player_current = state_current->player_current;
 
         visualize_add_node(state_current->id, state_current->eval, state_current->alpha, state_current->beta,
-                           state_current->dice, state_current->moved_piece, player_current);
+                           player_current);
 
         if (state_current->child_iter_max != -1)
         {
@@ -27,7 +27,7 @@ void visualize_graph(state_t* state_root)
                 const state_t* child = state_current->children[iter];
                 assert(child && "child is NULL");
 
-                visualize_add_edge(state_current->id, child->id);
+                visualize_add_edge(state_current->id, child->id, child->dice, child->moved_piece);
             }
         }
 
@@ -60,11 +60,13 @@ void visualize_path(state_t* state_root)
             const short player_current = state_current->player_current;
 
             visualize_add_node(state_current->id, state_current->eval, state_current->alpha, state_current->beta,
-                               state_current->dice, state_current->moved_piece, player_current);
+                               player_current);
 
             if (state_get_parent(state_current))
             {
-                visualize_add_edge(state_get_parent(state_current)->id, state_current->id);
+                // TODO: test
+                visualize_add_edge(state_get_parent(state_current)->id, state_current->id, state_current->dice,
+                                   state_current->moved_piece);
             }
 
             if (state_has_next_child(state_current))

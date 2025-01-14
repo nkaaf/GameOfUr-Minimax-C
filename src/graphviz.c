@@ -49,8 +49,8 @@ bool determine_float_str(const float val, char** str)
     return dyn_alloc;
 }
 
-void visualize_add_node(const size_t id, const float eval, const float alpha, const float beta, const short dice,
-                        const short moved_piece, const short player_current)
+void visualize_add_node(const size_t id, const float eval, const float alpha, const float beta,
+                        const short player_current)
 {
     assert(file && "file is NULL");
 
@@ -73,8 +73,8 @@ void visualize_add_node(const size_t id, const float eval, const float alpha, co
     const bool beta_dyn_alloc = determine_float_str(beta, &beta_val);
     const bool eval_dyn_alloc = determine_float_str(eval, &eval_val);
 
-    fprintf(file, "\t%lu [label=\"ID: %lu\nE: %s\nAlpha: %s\nBeta: %s\nD: %d\nMP: %d\" color=%s]\n", id, id, eval_val,
-            alpha_val, beta_val, dice, moved_piece, color);
+    fprintf(file, "\t%lu [label=\"ID: %lu\nE: %s\nα: %s\nβ: %s\n\" color=%s]\n", id, id, eval_val, alpha_val, beta_val,
+            color);
 
     if (alpha_dyn_alloc)
     {
@@ -90,9 +90,9 @@ void visualize_add_node(const size_t id, const float eval, const float alpha, co
     }
 }
 
-void visualize_add_edge(const size_t id_start, const size_t id_end)
+void visualize_add_edge(const size_t id_start, const size_t id_end, const short dice, const short moved_piece)
 {
-    fprintf(file, "\t%lu -- %lu\n", id_start, id_end);
+    fprintf(file, "\t%lu -- %lu\n [label=\"D: %d\nMP: %d\"]\n", id_start, id_end, dice, moved_piece);
 }
 
 void visualize_finalize()

@@ -6,7 +6,7 @@
 #include "common.h"
 
 #define STEPS_IN_FUTURE (2)
-#define PLAYER_1_MIN (true)
+#define PLAYER_TO_MAX (1)
 #define ROSETTE_9_IS_SAFE (true)
 
 #define NUM_OF_PIECES_PER_PLAYER (2)
@@ -26,8 +26,8 @@ static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 && "Higher numbers are not implement
 #define PLAYER_OTHER_START (2)
 
 #define EVAL_POINT_FINISH (100)
-#define EVAL_POINT_START (-5)
-#define EVAL_MULTIPLIER_ROSETTE (1.5)
+#define EVAL_POINT_START (-2)
+#define EVAL_MULTIPLIER_ROSETTE (10)
 #define EVAL_MULTIPLIER_KILLABLE (10)
 #define EVAL_MULTIPLIER_ATTACKER (-1.5)
 #define EVAL_ADDER_KILL_HAPPENS (100)
@@ -41,8 +41,8 @@ const static short visualize_throws[] = {1, 1, 1, 0, 0};
 const static float evaluation_base_points[] = {
     EVAL_POINT_FINISH, EVAL_POINT_START, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
 const static float evaluation_rosette_bonus[] = {
-    0, 0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1,
-    0, 0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1};
+    0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1,
+    0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1};
 const static float kill_distance_multipliers[] = {-1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
 
 #endif // CONFIG_H
