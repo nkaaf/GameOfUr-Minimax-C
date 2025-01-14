@@ -5,17 +5,16 @@
 
 #include "common.h"
 
-#define STEPS_IN_FUTURE (2)
+#define STEPS_IN_FUTURE (1)
 #define PLAYER_TO_MAX (1)
 #define ROSETTE_9_IS_SAFE (true)
 
-#define NUM_OF_PIECES_PER_PLAYER (2)
+#define NUM_OF_PIECES_PER_PLAYER (5)
 static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 && "Higher numbers are not implemented.");
 
 #define PIECES_1_START                                                                                                 \
-    (PIECE_FIELD_SET(0, 11) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |             \
-     PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |             \
-     PIECE_FIELD_SET(6, FIELD_START))
+    (PIECE_FIELD_SET(0, 2) | PIECE_FIELD_SET(1, 3) | PIECE_FIELD_SET(2, 4) | PIECE_FIELD_SET(3, 5) |                   \
+     PIECE_FIELD_SET(4, 6) | PIECE_FIELD_SET(5, FIELD_START) | PIECE_FIELD_SET(6, FIELD_START))
 #define PIECES_2_START                                                                                                 \
     (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |             \
      PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |             \
@@ -27,7 +26,7 @@ static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 && "Higher numbers are not implement
 
 #define EVAL_POINT_FINISH (100)
 #define EVAL_POINT_START (-.5)
-#define EVAL_MULTIPLIER_ROSETTE (10)
+#define EVAL_MULTIPLIER_ROSETTE (30)
 #define EVAL_MULTIPLIER_KILLABLE (10)
 #define EVAL_MULTIPLIER_ATTACKER (-1.5)
 #define EVAL_ADDER_KILL_HAPPENS (100)

@@ -101,7 +101,7 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
                                state_current->pieces_2, state_current->player_current, state_current->player_other);
 
         state_new->dice = dice;
-        state_new->moved_piece = -1; // no piece was moved
+        state_new->moved_piece = piece_index;
     }
 
     if (!state_new->second_throw)
@@ -139,7 +139,36 @@ void reset_all_state_child_iters(state_t* state_root)
     state_iterate_over_all_children_and_execute(state_root, 0, state_reset_child_iter);
 }
 
-float minimax(state_t* state_current, const size_t depth, const bool maximize)
+void calculate_all_children_by_piece(state_t* state, const short piece_index, const short* dice_first)
+{
+    printf("Simulate piece: %hd\n", piece_index);
+    if (dice_first == NULL)
+    {
+        for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
+        {
+            simulate_wrapper(state, piece_index, dice);
+        }
+    }
+    else
+    {
+        // Known dice throw
+        simulate_wrapper(state, piece_index, *dice_first);
+    }
+    printf("\n");
+
+    if (state_get_children_count(state) == 0)
+    {
+        // No move was possible
+
+        state_t* state_new = state_init(state->score_1, state->score_2, state->pieces_1, state->pieces_2,
+                                        state->player_current, state->player_other);
+        state_swap_player(state_new);
+
+        state_add_child(state, state_new);
+    }
+}
+
+float minimax(state_t* state_current, const size_t depth, const bool maximize, const short* dice_first)
 {
     if (depth == 0)
     {
@@ -147,42 +176,40 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize)
         return state_current->eval;
     }
 
-    {
-        // Simulate all children of this state
-        printf("Simulate step: %lu\n", STEPS_IN_FUTURE - depth + 1);
-        for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
-        {
-            printf("Simulate piece: %hd\n", piece_index);
-            for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
-            {
-                simulate_wrapper(state_current, piece_index, dice);
-            }
-            printf("\n");
-
-            if (state_get_children_count(state_current) == 0)
-            {
-                // No move was possible
-
-                state_t* state_new =
-                    state_init(state_current->score_1, state_current->score_2, state_current->pieces_1,
-                               state_current->pieces_2, state_current->player_current, state_current->player_other);
-                state_swap_player(state_new);
-
-                state_add_child(state_current, state_new);
-            }
-        }
-    }
-
     if (maximize)
     {
-        state_current->eval = -FLT_MAX;
-
-        for (size_t index_current_child = 0; index_current_child <= state_current->child_iter_max;
-             index_current_child++)
+        for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
         {
-            const float eval = minimax(state_current->children[index_current_child], depth - 1, false);
-            state_current->eval = fmaxf(state_current->eval, eval);
-            state_current->alpha = fmaxf(state_current->alpha, eval);
+            // Calculate all children from piece_index
+            const size_t index_child_start = state_current->child_iter_max + 1;
+            calculate_all_children_by_piece(state_current, piece_index, dice_first);
+            const size_t index_child_end = state_current->child_iter_max + 1;
+
+            // get worst case of children evaluation
+            float eval_min = +FLT_MAX;
+            for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
+            {
+                state_t* child = state_current->children[index_child];
+                const bool maximize_next_level = child->player_current == PLAYER_TO_MAX;
+
+                const float eval = minimax(child, depth - 1, maximize_next_level, NULL);
+
+                if (state_current->children[index_child]->dice != 0)
+                {
+                    // ignore child with dice == 0
+
+                    eval_min = fminf(eval_min, eval);
+                }
+            }
+
+            if (state_current->child_iter_max == -1 ||
+                (state_current->child_iter_max == 0 && state_current->children[0]->dice == 0))
+            {
+                // Compensation, if no move, or only one move (dice == 0) is possible
+                eval_min = -FLT_MAX;
+            }
+
+            state_current->eval = state_current->alpha = fmaxf(state_current->alpha, eval_min);
             if (state_current->beta <= state_current->alpha)
             {
                 break;
@@ -195,12 +222,38 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize)
     {
         state_current->eval = +FLT_MAX;
 
-        for (size_t index_current_child = 0; index_current_child <= state_current->child_iter_max;
-             index_current_child++)
+        for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
         {
-            const float eval = minimax(state_current->children[index_current_child], depth - 1, true);
-            state_current->eval = fminf(state_current->eval, eval);
-            state_current->beta = fminf(state_current->beta, eval);
+            // Calculate all children from piece_index
+            const size_t index_child_start = state_current->child_iter_max + 1;
+            calculate_all_children_by_piece(state_current, piece_index, dice_first);
+            const size_t index_child_end = state_current->child_iter_max + 1;
+
+            // get worst case of children evaluation
+            float eval_min = +FLT_MAX;
+            for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
+            {
+                state_t* child = state_current->children[index_child];
+                const bool maximize_next_level = child->player_current == PLAYER_TO_MAX;
+
+                const float eval = minimax(child, depth - 1, maximize_next_level, NULL);
+
+                if (state_current->children[index_child]->dice != 0)
+                {
+                    // ignore child with dice == 0
+
+                    eval_min = fminf(eval_min, eval);
+                }
+            }
+
+            if (state_current->child_iter_max == -1 ||
+                (state_current->child_iter_max == 0 && state_current->children[0]->dice == 0))
+            {
+                // Compensation, if no move, or only one move (dice == 0) is possible
+                eval_min = -FLT_MAX;
+            }
+
+            state_current->eval = state_current->beta = fminf(state_current->beta, eval_min);
             if (state_current->beta <= state_current->alpha)
             {
                 break;
@@ -212,9 +265,26 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize)
     assert(false);
 }
 
-char get_best_move(state_t* state_root, const short dice_first)
+char get_best_move(state_t* state_root, const short* dice_first)
 {
-    float i = minimax(state_root, STEPS_IN_FUTURE, true);
+    const float i = minimax(state_root, STEPS_IN_FUTURE, true, dice_first);
+    assert(i == state_root->eval);
+
+    char moved_piece = -1;
+    for (size_t index_child = 0; index_child <= state_root->child_iter_max; index_child++)
+    {
+        const state_t* child = state_root->children[index_child];
+        if (child->dice == 0)
+        {
+            continue;
+        }
+
+        if (child->eval == state_root->eval)
+        {
+            moved_piece = (char)child->moved_piece;
+            break;
+        }
+    }
 
 #if VISUALIZE
     reset_all_state_child_iters(state_root);
@@ -225,89 +295,18 @@ char get_best_move(state_t* state_root, const short dice_first)
 #endif /* VISUALIZE */
 
     cleanup(state_root);
-}
 
-// char get_best_move(state_t* state_root, const short dice_first)
-//{
-//     // dice_first == -1 -> all dice throws are calculated on first level
-//
-//     state_t* state_current = state_root;
-//
-//     size_t step_current = 0;
-//
-//     while (state_current)
-//     {
-//         for (size_t step = step_current; step < STEPS_IN_FUTURE; step++)
-//         {
-//             const bool should_evaluate = step == STEPS_IN_FUTURE - 1;
-//
-//             printf("Simulate step: %lu\n", step);
-//             for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
-//             {
-//                 printf("Simulate piece: %hd\n", piece_index);
-//                 if (dice_first != -1 && step_current == 0)
-//                 {
-//                     // If first dice throw is known, simulate only this.
-//                     simulate_wrapper(state_current, piece_index, dice_first, should_evaluate);
-//                 }
-//                 else
-//                 {
-//                     // Simulate all possible dice throws
-//                     for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
-//                     {
-//                         simulate_wrapper(state_current, piece_index, dice, should_evaluate);
-//                     }
-//                 }
-//                 printf("\n");
-//             }
-//
-//             if (state_get_children_count(state_current) == 0)
-//             {
-//                 // No move was possible
-//
-//                 state_t* state_new =
-//                     state_init(state_current->score_1, state_current->score_2, state_current->pieces_1,
-//                                state_current->pieces_2, state_current->player_current, state_current->player_other);
-//                 state_swap_player(state_new);
-//
-//                 state_new->eval = evaluate(state_current, state_new);
-//
-//                 state_add_child(state_current, state_new);
-//             }
-//
-//             if (step != STEPS_IN_FUTURE - 1)
-//             {
-//                 state_current = state_get_next_child(state_current);
-//             } else if (step == STEPS_IN_FUTURE - 1)
-//             {
-//                 int i = 0;
-//             }
-//         }
-//
-//         step_current = STEPS_IN_FUTURE - 1;
-//         state_current = state_get_next_child_of_parent_recursive(state_current, &step_current);
-//     }
-//
-//     // TODO: To implement
-//     //  Return value is the index of the piece (zero-based)
-//
-//
-// #if VISUALIZE
-//     reset_all_state_child_iters(state_root);
-//     visualize_graph(state_root);
-//
-//     reset_all_state_child_iters(state_root);
-//     visualize_path(state_root);
-// #endif /* VISUALIZE */
-//
-//     // Clean Up
-//     cleanup(state_root);
-//
-//     return 0;
-// }
+    return moved_piece;
+}
 
 float evaluate(const state_t* state_current, const state_t* state_new)
 {
+    if (state_check_win(state_new))
+    {
+        return +FLT_MAX;
+    }
+
+
     const short player_to_maximize = PLAYER_TO_MAX;
     assert((player_to_maximize == 1 || player_to_maximize == 2) && "Incorrect player");
 
