@@ -10,7 +10,7 @@ int main(void)
                                      PLAYER_OTHER_START);
 
     short first_dice = 1;
-    printf("Move piece: %d", get_best_move(state_root, NULL));
+    printf("Move piece: %d", get_best_move(state_root, NULL, PLAYER_TO_MAX));
 
     return 0;
 }

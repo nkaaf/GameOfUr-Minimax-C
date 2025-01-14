@@ -13,8 +13,9 @@
 static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 && "Higher numbers are not implemented.");
 
 #define PIECES_1_START                                                                                                 \
-    (PIECE_FIELD_SET(0, 2) | PIECE_FIELD_SET(1, 3) | PIECE_FIELD_SET(2, 4) | PIECE_FIELD_SET(3, 5) |                   \
-     PIECE_FIELD_SET(4, 6) | PIECE_FIELD_SET(5, FIELD_START) | PIECE_FIELD_SET(6, FIELD_START))
+    (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |             \
+     PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |             \
+     PIECE_FIELD_SET(6, FIELD_START))
 #define PIECES_2_START                                                                                                 \
     (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |             \
      PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |             \

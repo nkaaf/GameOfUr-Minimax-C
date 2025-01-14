@@ -168,11 +168,12 @@ void calculate_all_children_by_piece(state_t* state, const short piece_index, co
     }
 }
 
-float minimax(state_t* state_current, const size_t depth, const bool maximize, const short* dice_first)
+float minimax(state_t* state_current, const size_t depth, const bool maximize, const short* dice_first,
+              const int player_to_maximize)
 {
     if (depth == 0)
     {
-        state_current->eval = evaluate(state_current->parent, state_current);
+        state_current->eval = evaluate(state_current->parent, state_current, player_to_maximize);
         return state_current->eval;
     }
 
@@ -190,9 +191,9 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
             {
                 state_t* child = state_current->children[index_child];
-                const bool maximize_next_level = child->player_current == PLAYER_TO_MAX;
+                const bool maximize_next_level = child->player_current == player_to_maximize;
 
-                const float eval = minimax(child, depth - 1, maximize_next_level, NULL);
+                const float eval = minimax(child, depth - 1, maximize_next_level, NULL, player_to_maximize);
 
                 if (state_current->children[index_child]->dice != 0)
                 {
@@ -234,9 +235,9 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
             {
                 state_t* child = state_current->children[index_child];
-                const bool maximize_next_level = child->player_current == PLAYER_TO_MAX;
+                const bool maximize_next_level = child->player_current == player_to_maximize;
 
-                const float eval = minimax(child, depth - 1, maximize_next_level, NULL);
+                const float eval = minimax(child, depth - 1, maximize_next_level, NULL, player_to_maximize);
 
                 if (state_current->children[index_child]->dice != 0)
                 {
@@ -265,9 +266,9 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
     assert(false);
 }
 
-char get_best_move(state_t* state_root, const short* dice_first)
+char get_best_move(state_t* state_root, const short* dice_first, int player_to_maximize)
 {
-    const float i = minimax(state_root, STEPS_IN_FUTURE, true, dice_first);
+    const float i = minimax(state_root, STEPS_IN_FUTURE, true, dice_first, player_to_maximize);
     assert(i == state_root->eval);
 
     char moved_piece = -1;
@@ -299,16 +300,14 @@ char get_best_move(state_t* state_root, const short* dice_first)
     return moved_piece;
 }
 
-float evaluate(const state_t* state_current, const state_t* state_new)
+float evaluate(const state_t* state_current, const state_t* state_new, const int player_to_maximize)
 {
+    assert((player_to_maximize == 1 || player_to_maximize == 2) && "Incorrect player");
+
     if (state_check_win(state_new))
     {
         return +FLT_MAX;
     }
-
-
-    const short player_to_maximize = PLAYER_TO_MAX;
-    assert((player_to_maximize == 1 || player_to_maximize == 2) && "Incorrect player");
 
     const uint32_t pieces_new_player_max = player_to_maximize == 1 ? state_new->pieces_1 : state_new->pieces_2;
     const uint32_t pieces_new_player_min = player_to_maximize == 1 ? state_new->pieces_2 : state_new->pieces_1;
@@ -362,7 +361,7 @@ float evaluate(const state_t* state_current, const state_t* state_new)
         }
     }
 
-    if (PLAYER_TO_MAX == state_current->player_current)
+    if (player_to_maximize == state_current->player_current)
     {
         // Improvement of state
         short count_pieces_other_player_start_current = 0;
@@ -391,5 +390,5 @@ float evaluate(const state_t* state_current, const state_t* state_new)
     // scale points_total with throw_probabilty to strengthen dice throws with high probability
     // negative points_total will always be < 0
     return points_total;
-    //return points_total * throw_probability[state_new->dice];
+    // return points_total * throw_probability[state_new->dice];
 }
