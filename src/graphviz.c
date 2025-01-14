@@ -1,8 +1,10 @@
 #include "visualize.h"
 
 #include <assert.h>
+#include <float.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 FILE* file;
 
@@ -25,8 +27,30 @@ void visualize_free()
     }
 }
 
-void visualize_add_node(const size_t id, const float eval, const short dice, const short moved_piece,
-                        const short player_current)
+bool determine_float_str(const float val, char** str)
+{
+    bool dyn_alloc = false;
+    if (val == -FLT_MAX)
+    {
+        *str = "-∞";
+    }
+    else if (val == +FLT_MAX)
+    {
+        *str = "+∞";
+    }
+    else
+    {
+        const int size = snprintf(NULL, 0, "%.1f", val);
+        *str = malloc((size + 1) * sizeof(char));
+        snprintf(*str, size + 1, "%.1f", val);
+        dyn_alloc = true;
+    }
+
+    return dyn_alloc;
+}
+
+void visualize_add_node(const size_t id, const float eval, const float alpha, const float beta, const short dice,
+                        const short moved_piece, const short player_current)
 {
     assert(file && "file is NULL");
 
@@ -44,7 +68,26 @@ void visualize_add_node(const size_t id, const float eval, const short dice, con
         assert(false && "player_current is invalid");
     }
 
-    fprintf(file, "\t%lu [label=\"ID: %lu\nE: %f\nD: %d\nMP: %d\" color=%s]\n", id, id, eval, dice, moved_piece, color);
+    char *alpha_val, *beta_val, *eval_val;
+    const bool alpha_dyn_alloc = determine_float_str(alpha, &alpha_val);
+    const bool beta_dyn_alloc = determine_float_str(beta, &beta_val);
+    const bool eval_dyn_alloc = determine_float_str(eval, &eval_val);
+
+    fprintf(file, "\t%lu [label=\"ID: %lu\nE: %s\nAlpha: %s\nBeta: %s\nD: %d\nMP: %d\" color=%s]\n", id, id, eval_val,
+            alpha_val, beta_val, dice, moved_piece, color);
+
+    if (alpha_dyn_alloc)
+    {
+        free(alpha_val);
+    }
+    if (beta_dyn_alloc)
+    {
+        free(beta_val);
+    }
+    if (eval_dyn_alloc)
+    {
+        free(eval_val);
+    }
 }
 
 void visualize_add_edge(const size_t id_start, const size_t id_end)

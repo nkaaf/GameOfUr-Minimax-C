@@ -18,3 +18,6 @@ set(SOURCES_Test
 
 add_executable(GameOfUr_C main.c ${SOURCES_Game})
 add_executable(GameOfUr_C_Test ${SOURCES_Game} ${SOURCES_Test})
+
+target_link_libraries(GameOfUr_C m)
+target_link_libraries(GameOfUr_C_Test m)

@@ -11,26 +11,12 @@ void visualize_graph(state_t* state_root)
 
     state_t* state_current = state_root;
 
-    bool first = true;
     while (state_current)
     {
-        short player_current;
-        if (first)
-        {
-            player_current = 1;
-            first = false;
-        }
-        else if (state_current->second_throw)
-        {
-            player_current = state_current->player_current;
-        }
-        else
-        {
-            player_current = state_current->player_other;
-        }
+        const short player_current = state_current->player_current;
 
-        visualize_add_node(state_current->id, state_current->eval, state_current->dice, state_current->moved_piece,
-                           player_current);
+        visualize_add_node(state_current->id, state_current->eval, state_current->alpha, state_current->beta,
+                           state_current->dice, state_current->moved_piece, player_current);
 
         if (state_current->child_iter_max != -1)
         {
@@ -67,28 +53,14 @@ void visualize_path(state_t* state_root)
     state_t* state_current = state_root;
 
     size_t step_current = -1;
-    bool first = true;
     while (state_current)
     {
-        if (first || (step_current < VISUALIZE_THROWS_COUNT && state_current->dice == visualize_throws[step_current]))
+        if (step_current < VISUALIZE_THROWS_COUNT && state_current->dice == visualize_throws[step_current])
         {
-            short player_current;
-            if (first)
-            {
-                player_current = 1;
-                first = false;
-            }
-            else if (state_current->second_throw)
-            {
-                player_current = state_current->player_current;
-            }
-            else
-            {
-                player_current = state_current->player_other;
-            }
+            const short player_current = state_current->player_current;
 
-            visualize_add_node(state_current->id, state_current->eval, state_current->dice, state_current->moved_piece,
-                               player_current);
+            visualize_add_node(state_current->id, state_current->eval, state_current->alpha, state_current->beta,
+                               state_current->dice, state_current->moved_piece, player_current);
 
             if (state_get_parent(state_current))
             {

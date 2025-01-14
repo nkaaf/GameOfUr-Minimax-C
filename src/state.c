@@ -1,5 +1,6 @@
 #include "state.h"
 
+#include <float.h>
 #include <stdlib.h>
 
 #include "common.h"
@@ -16,11 +17,11 @@ state_t* state_init(const short score_1, const short score_2, const uint32_t pie
         assert(false && "malloc failed");
     }
 
-    state->children = malloc(NUM_OF_PIECES_PER_PLAYER * DICE_RANGE_TRUE * sizeof(state_t*));
+    state->children = calloc(NUM_OF_PIECES_PER_PLAYER * DICE_RANGE_TRUE, sizeof(state_t*));
     if (!state->children)
     {
         state_free(state);
-        assert(false && "malloc failed");
+        assert(false && "calloc failed");
     }
 
     state->score_1 = score_1;
@@ -40,6 +41,9 @@ state_t* state_init(const short score_1, const short score_2, const uint32_t pie
     state->moved_piece = -1;
 
     state->id = ++id;
+
+    state->alpha = -FLT_MAX;
+    state->beta = +FLT_MAX;
 
     return state;
 }
@@ -207,4 +211,20 @@ state_t* state_get_next_child_of_parent_recursive(state_t* state, size_t* step_c
     }
 
     return state;
+}
+
+void state_reset_child_iter(state_t* state)
+{
+    state->child_iter = -1;
+}
+
+void state_iterate_over_all_children_and_execute(state_t* state, size_t index_current_child, void (*func)(state_t*))
+{
+    while (index_current_child <= state->child_iter_max && state->children[index_current_child])
+    {
+        state_iterate_over_all_children_and_execute(state->children[index_current_child], 0, func);
+        index_current_child++;
+    }
+
+    func(state);
 }

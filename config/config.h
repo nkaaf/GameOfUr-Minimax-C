@@ -5,7 +5,7 @@
 
 #include "common.h"
 
-#define STEPS_IN_FUTURE (3)
+#define STEPS_IN_FUTURE (2)
 #define PLAYER_1_MIN (true)
 #define ROSETTE_9_IS_SAFE (true)
 

@@ -17,7 +17,7 @@ struct state_s
     bool second_throw;
     state_t* parent;
     state_t** children;
-    float eval;
+    float eval, alpha, beta;
     int child_iter, child_iter_max;
     size_t id;
 };
@@ -46,5 +46,9 @@ bool state_has_next_child(const state_t* state);
 bool state_equals(const state_t* state1, const state_t* state2);
 
 state_t* state_get_next_child_of_parent_recursive(state_t* state, size_t* step_count);
+
+void state_reset_child_iter(state_t* state);
+
+void state_iterate_over_all_children_and_execute(state_t* state, size_t index_current_child, void (*func)(state_t*));
 
 #endif // STATE_H

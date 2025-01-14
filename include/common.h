@@ -8,7 +8,7 @@
 #define FIELD_FINISH ((uint8_t)0)
 #define FIELD_START ((uint8_t)1)
 #define ROSETTE_SAFE (9)
-#define MIN_DICE_THROW (0)
+#define MIN_DICE_THROW (3)
 #define MAX_DICE_THROW (4)
 #define DICE_RANGE_TRUE (MAX_DICE_THROW - MIN_DICE_THROW + 1)
 
