@@ -13,7 +13,7 @@
 static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 && "Higher numbers are not implemented.");
 
 #define PIECES_1_START                                                                                                 \
-    (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |             \
+    (PIECE_FIELD_SET(0, 11) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |             \
      PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |             \
      PIECE_FIELD_SET(6, FIELD_START))
 #define PIECES_2_START                                                                                                 \
@@ -26,7 +26,7 @@ static_assert(NUM_OF_PIECES_PER_PLAYER <= 7 && "Higher numbers are not implement
 #define PLAYER_OTHER_START (2)
 
 #define EVAL_POINT_FINISH (100)
-#define EVAL_POINT_START (-2)
+#define EVAL_POINT_START (-.5)
 #define EVAL_MULTIPLIER_ROSETTE (10)
 #define EVAL_MULTIPLIER_KILLABLE (10)
 #define EVAL_MULTIPLIER_ATTACKER (-1.5)

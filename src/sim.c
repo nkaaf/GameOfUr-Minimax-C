@@ -3,6 +3,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "config.h"
@@ -388,5 +389,8 @@ float evaluate(const state_t* state_current, const state_t* state_new)
         points_total += (float)kill_happens * EVAL_ADDER_KILL_HAPPENS;
     }
 
+    // scale points_total with throw_probabilty to strengthen dice throws with high probability
+    // negative points_total will always be < 0
     return points_total;
+    //return points_total * throw_probability[state_new->dice];
 }

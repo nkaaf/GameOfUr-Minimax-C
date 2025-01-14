@@ -40,9 +40,9 @@ bool determine_float_str(const float val, char** str)
     }
     else
     {
-        const int size = snprintf(NULL, 0, "%.1f", val);
+        const int size = snprintf(NULL, 0, "%.3f", val);
         *str = malloc((size + 1) * sizeof(char));
-        snprintf(*str, size + 1, "%.1f", val);
+        snprintf(*str, size + 1, "%.3f", val);
         dyn_alloc = true;
     }
 

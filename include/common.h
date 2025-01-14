@@ -8,9 +8,11 @@
 #define FIELD_FINISH ((uint8_t)0)
 #define FIELD_START ((uint8_t)1)
 #define ROSETTE_SAFE (9)
-#define MIN_DICE_THROW (3)
+#define MIN_DICE_THROW (0)
 #define MAX_DICE_THROW (4)
 #define DICE_RANGE_TRUE (MAX_DICE_THROW - MIN_DICE_THROW + 1)
+
+const static float throw_probability[] = {1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
 
 #define MASK_PIECE_0 ((uint32_t)0xF)
 #define MASK_PIECE(n) ((uint32_t) (MASK_PIECE_0 << ((n) * 4)))
