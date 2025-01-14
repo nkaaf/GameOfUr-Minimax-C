@@ -115,8 +115,6 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
 
 void simulate_wrapper(state_t* state_current, const short piece_index, const short dice)
 {
-    printf("Simulate dice: %hd\n", dice);
-
     state_t* state_new = simulate(state_current, piece_index, dice);
     if (!state_new)
     {
@@ -124,12 +122,7 @@ void simulate_wrapper(state_t* state_current, const short piece_index, const sho
         return;
     }
 
-    printf("Simulated id: %lu\n", state_new->id);
-
     state_add_child(state_current, state_new);
-
-    // TODO: Behandlung
-    // state_check_win(state_new);
 }
 
 void cleanup(state_t* state_root) { state_iterate_over_all_children_and_execute(state_root, 0, state_free); }
@@ -141,7 +134,6 @@ void reset_all_state_child_iters(state_t* state_root)
 
 void calculate_all_children_by_piece(state_t* state, const short piece_index, const short* dice_first)
 {
-    printf("Simulate piece: %hd\n", piece_index);
     if (dice_first == NULL)
     {
         for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
@@ -153,18 +145,6 @@ void calculate_all_children_by_piece(state_t* state, const short piece_index, co
     {
         // Known dice throw
         simulate_wrapper(state, piece_index, *dice_first);
-    }
-    printf("\n");
-
-    if (state_get_children_count(state) == 0)
-    {
-        // No move was possible
-
-        state_t* state_new = state_init(state->score_1, state->score_2, state->pieces_1, state->pieces_2,
-                                        state->player_current, state->player_other);
-        state_swap_player(state_new);
-
-        state_add_child(state, state_new);
     }
 }
 
@@ -185,6 +165,12 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             const size_t index_child_start = state_current->child_iter_max + 1;
             calculate_all_children_by_piece(state_current, piece_index, dice_first);
             const size_t index_child_end = state_current->child_iter_max + 1;
+
+            if (index_child_end == index_child_start)
+            {
+                // No state was created
+                continue;
+            }
 
             // get worst case of children evaluation
             float eval_min = +FLT_MAX;
@@ -230,6 +216,12 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             calculate_all_children_by_piece(state_current, piece_index, dice_first);
             const size_t index_child_end = state_current->child_iter_max + 1;
 
+            if (index_child_end == index_child_start)
+            {
+                // No state was created
+                continue;
+            }
+
             // get worst case of children evaluation
             float eval_min = +FLT_MAX;
             for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
@@ -274,15 +266,15 @@ char get_best_move(state_t* state_root, const short* dice_first, const int playe
     char moved_piece = -1;
     for (size_t index_child = 0; index_child <= state_root->child_iter_max; index_child++)
     {
-        const state_t* child = state_root->children[index_child];
-        if (child->dice == 0)
+        const state_t* state_child = state_root->children[index_child];
+        if (state_child->dice == 0)
         {
             continue;
         }
 
-        if (child->eval == state_root->eval)
+        if (state_child->eval == state_root->eval)
         {
-            moved_piece = (char)child->moved_piece;
+            moved_piece = (char)state_child->moved_piece;
             break;
         }
     }
@@ -389,6 +381,7 @@ float evaluate(const state_t* state_current, const state_t* state_new, const int
 
     // scale points_total with throw_probabilty to strengthen dice throws with high probability
     // negative points_total will always be < 0
-    return points_total;
-    // return points_total * throw_probability[state_new->dice];
+    const float points_final = points_total * throw_probability[state_new->dice];
+
+    return (float) ceil(points_final * 1000.0) / 1000.0;
 }
