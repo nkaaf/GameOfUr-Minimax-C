@@ -266,7 +266,7 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
     assert(false);
 }
 
-char get_best_move(state_t* state_root, const short* dice_first, int player_to_maximize)
+char get_best_move(state_t* state_root, const short* dice_first, const int player_to_maximize)
 {
     const float i = minimax(state_root, STEPS_IN_FUTURE, true, dice_first, player_to_maximize);
     assert(i == state_root->eval);
