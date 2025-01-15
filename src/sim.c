@@ -288,6 +288,7 @@ char get_best_move(state_t* state_root, const short* dice_first, const int playe
 #endif /* VISUALIZE */
 
     cleanup(state_root);
+    state_reset_ids();
 
     return moved_piece;
 }
@@ -383,5 +384,5 @@ float evaluate(const state_t* state_current, const state_t* state_new, const int
     // negative points_total will always be < 0
     const float points_final = points_total * throw_probability[state_new->dice];
 
-    return (float) ceil(points_final * 1000.0) / 1000.0;
+    return (float)ceil(points_final * 1000.0) / 1000.0;
 }

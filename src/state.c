@@ -60,6 +60,8 @@ void state_free(state_t* state)
     }
 }
 
+void state_reset_ids() { id = -1; }
+
 bool state_check_win(const state_t* state)
 {
     assert(state != NULL && "state is null");
@@ -213,10 +215,7 @@ state_t* state_get_next_child_of_parent_recursive(state_t* state, size_t* step_c
     return state;
 }
 
-void state_reset_child_iter(state_t* state)
-{
-    state->child_iter = -1;
-}
+void state_reset_child_iter(state_t* state) { state->child_iter = -1; }
 
 void state_iterate_over_all_children_and_execute(state_t* state, size_t index_current_child, void (*func)(state_t*))
 {

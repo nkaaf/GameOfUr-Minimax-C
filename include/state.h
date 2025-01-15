@@ -27,6 +27,8 @@ state_t* state_init(short score_1, short score_2, uint32_t pieces_1, uint32_t pi
 
 void state_free(state_t* state);
 
+void state_reset_ids();
+
 bool state_check_win(const state_t* state);
 
 void state_swap_player(state_t* state);
