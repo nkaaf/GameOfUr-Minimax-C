@@ -1,15 +1,15 @@
 #include "state.h"
 
+#include <assert.h>
 #include <float.h>
 #include <stdlib.h>
 
 #include "common.h"
-#include "config.h"
 
 size_t id = -1;
 
-state_t* state_init(const short score_1, const short score_2, const uint32_t pieces_1, const uint32_t pieces_2,
-                    const short player_current, const short player_other)
+state_t* state_init(const short score_0, const short score_1, const uint32_t pieces_0, const uint32_t pieces_1,
+                    const short player_current, const short player_other, const minimax_config_t* config)
 {
     state_t* state = malloc(sizeof(state_t));
     if (!state)
@@ -17,19 +17,19 @@ state_t* state_init(const short score_1, const short score_2, const uint32_t pie
         assert(false && "malloc failed");
     }
 
-    state->children = calloc(NUM_OF_PIECES_PER_PLAYER * DICE_RANGE_TRUE, sizeof(state_t*));
+    state->children = calloc(config->num_of_pieces_per_player * DICE_RANGE_TRUE, sizeof(state_t*));
     if (!state->children)
     {
         state_free(state);
         assert(false && "calloc failed");
     }
 
+    state->score_0 = score_0;
     state->score_1 = score_1;
-    state->score_2 = score_2;
     state->player_current = player_current;
     state->player_other = player_other;
+    state->pieces_0 = pieces_0;
     state->pieces_1 = pieces_1;
-    state->pieces_2 = pieces_2;
 
     state->parent = NULL;
 
@@ -62,20 +62,12 @@ void state_free(state_t* state)
 
 void state_reset_ids() { id = -1; }
 
-bool state_check_win(const state_t* state)
+bool state_check_win(const state_t* state, const minimax_config_t* config)
 {
     assert(state != NULL && "state is null");
+    assert(state->player_current == 0 || state->player_current == 1 && "Player is incorrect");
 
-    bool won = false;
-    if (state->player_current == 1)
-    {
-        won = state->score_1 == NUM_OF_PIECES_PER_PLAYER;
-    }
-    else if (state->player_current == 2)
-    {
-        won = state->score_2 == NUM_OF_PIECES_PER_PLAYER;
-    }
-    return won;
+    return (state->player_current == 0 ? state->score_0 : state->score_1) == config->num_of_pieces_per_player;
 }
 
 void state_swap_player(state_t* state)
@@ -90,24 +82,10 @@ void state_swap_player(state_t* state)
 void state_piece_move(state_t* state, const short player, const size_t piece_index, const uint8_t dest)
 {
     assert(state != NULL && "state is null");
+    assert(player == 0 || player == 1 && "player is incorrect");
 
-    uint32_t* pieces;
-    short* score;
-
-    if (player == 1)
-    {
-        pieces = &state->pieces_1;
-        score = &state->score_1;
-    }
-    else if (player == 2)
-    {
-        pieces = &state->pieces_2;
-        score = &state->score_2;
-    }
-    else
-    {
-        assert(false && "Incorrect player");
-    }
+    uint32_t* pieces = player == 0 ? &state->pieces_0 : &state->pieces_1;
+    short* score = player == 0 ? &state->score_0 : &state->score_1;
 
     GET_PIECE_MASK(piece_mask_clear, piece_index);
     piece_mask_clear = ~piece_mask_clear;
@@ -176,8 +154,8 @@ bool state_has_next_child(const state_t* state)
 
 bool state_equals(const state_t* state1, const state_t* state2)
 {
-    return state1->score_1 == state2->score_1 && state1->score_2 == state2->score_2 &&
-        state1->pieces_1 == state2->pieces_1 && state1->pieces_2 == state2->pieces_2 &&
+    return state1->score_0 == state2->score_0 && state1->score_1 == state2->score_1 &&
+        state1->pieces_0 == state2->pieces_0 && state1->pieces_1 == state2->pieces_1 &&
         state1->player_current == state2->player_current && state1->player_other == state2->player_other &&
         state1->dice == state2->dice && state1->moved_piece == state2->moved_piece &&
         state1->second_throw == state2->second_throw && state1->parent == state1->parent &&

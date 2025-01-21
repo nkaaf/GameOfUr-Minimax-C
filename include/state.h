@@ -1,5 +1,7 @@
-#ifndef STATE_H
-#define STATE_H
+#ifndef MINIMAX_STATE_H
+#define MINIMAX_STATE_H
+
+#include "config.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,8 +11,8 @@ typedef struct state_s state_t;
 
 struct state_s
 {
-    short score_1, score_2;
-    uint32_t pieces_1, pieces_2;
+    short score_0, score_1;
+    uint32_t pieces_0, pieces_1;
     short player_current, player_other;
     short dice;
     short moved_piece;
@@ -22,14 +24,14 @@ struct state_s
     size_t id;
 };
 
-state_t* state_init(short score_1, short score_2, uint32_t pieces_1, uint32_t pieces_2, short player_current,
-                    short player_other);
+state_t* state_init(short score_0, short score_1, uint32_t pieces_0, uint32_t pieces_1, short player_current,
+                    short player_other, const minimax_config_t* config);
 
 void state_free(state_t* state);
 
 void state_reset_ids();
 
-bool state_check_win(const state_t* state);
+bool state_check_win(const state_t* state, const minimax_config_t* config);
 
 void state_swap_player(state_t* state);
 
@@ -53,4 +55,4 @@ void state_reset_child_iter(state_t* state);
 
 void state_iterate_over_all_children_and_execute(state_t* state, size_t index_current_child, void (*func)(state_t*));
 
-#endif // STATE_H
+#endif // MINIMAX_STATE_H

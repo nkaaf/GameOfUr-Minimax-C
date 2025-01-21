@@ -1,8 +1,6 @@
 #include "common.h"
 
-#include <config.h>
-
-bool any_piece_on_field(const uint32_t pieces, const uint8_t pos, size_t* piece_index)
+bool any_piece_on_field(const uint32_t pieces, const uint8_t pos, size_t* piece_index, const minimax_config_t* config)
 {
     bool on_field = false;
 
@@ -12,7 +10,7 @@ bool any_piece_on_field(const uint32_t pieces, const uint8_t pos, size_t* piece_
         piece_index = &tmp;
     }
 
-    for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
+    for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
     {
         PIECE_FIELD_GET(piece_field, pieces, i);
         if (piece_field == pos)

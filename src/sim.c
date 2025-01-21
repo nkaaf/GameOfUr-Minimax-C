@@ -1,30 +1,28 @@
 #include "sim.h"
 
+#include <assert.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "common.h"
-#include "config.h"
-
-#if VISUALIZE
 #include "visualize.h"
-#endif /* VISUALIZE */
 
 
-state_t* simulate(const state_t* state_current, const short piece_index, const short dice)
+state_t* simulate(const state_t* state_current, const short piece_index, const short dice,
+                  const minimax_config_t* config)
 {
     state_t* state_new = NULL;
 
-    assert((state_current->player_current == 1 || state_current->player_current == 2) && "Incorrect player");
+    assert((state_current->player_current == 0 || state_current->player_current == 1) && "Incorrect player");
 
     if (dice != 0)
     {
         const uint32_t pieces_current_player =
-            state_current->player_current == 1 ? state_current->pieces_1 : state_current->pieces_2;
+            state_current->player_current == 0 ? state_current->pieces_0 : state_current->pieces_1;
         const uint32_t pieces_other_player =
-            state_current->player_current == 1 ? state_current->pieces_2 : state_current->pieces_1;
+            state_current->player_current == 0 ? state_current->pieces_1 : state_current->pieces_0;
 
         PIECE_FIELD_GET(piece_field, pieces_current_player, piece_index);
 
@@ -44,15 +42,16 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
             return NULL;
         }
 
-        if (piece_field_dest != FIELD_FINISH && any_piece_on_field(pieces_current_player, piece_field_dest, NULL))
+        if (piece_field_dest != FIELD_FINISH &&
+            any_piece_on_field(pieces_current_player, piece_field_dest, NULL, config))
         {
             // Move cannot be done, because the current player is already on the destination field.
 
             return NULL;
         }
 
-        if (ROSETTE_9_IS_SAFE && piece_field_dest == ROSETTE_SAFE &&
-            any_piece_on_field(pieces_other_player, piece_field_dest, NULL))
+        if (config->rosette_middle_safe && piece_field_dest == ROSETTE_SAFE &&
+            any_piece_on_field(pieces_other_player, piece_field_dest, NULL, config))
         {
             // Move cannot be done, because the other player is on the safe field.
 
@@ -61,8 +60,9 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
 
         // Only valid moves from here
 
-        state_new = state_init(state_current->score_1, state_current->score_2, state_current->pieces_1,
-                               state_current->pieces_2, state_current->player_current, state_current->player_other);
+        state_new =
+            state_init(state_current->score_0, state_current->score_1, state_current->pieces_0, state_current->pieces_1,
+                       state_current->player_current, state_current->player_other, config);
 
         state_new->dice = dice;
         state_new->moved_piece = piece_index;
@@ -79,7 +79,7 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
 
             size_t piece_index_other;
             if (6 <= piece_field_dest && piece_field_dest <= 13 &&
-                any_piece_on_field(pieces_other_player, piece_field_dest, &piece_index_other))
+                any_piece_on_field(pieces_other_player, piece_field_dest, &piece_index_other, config))
             {
                 // This can only be reached, if next field on war zone
                 // Piece of other player is caught and returned to start
@@ -97,8 +97,9 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
     }
     else
     {
-        state_new = state_init(state_current->score_1, state_current->score_2, state_current->pieces_1,
-                               state_current->pieces_2, state_current->player_current, state_current->player_other);
+        state_new =
+            state_init(state_current->score_0, state_current->score_1, state_current->pieces_0, state_current->pieces_1,
+                       state_current->player_current, state_current->player_other, config);
 
         state_new->dice = dice;
         state_new->moved_piece = piece_index;
@@ -113,9 +114,9 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
     return state_new;
 }
 
-void simulate_wrapper(state_t* state_current, const short piece_index, const short dice)
+void simulate_wrapper(state_t* state_current, const short piece_index, const short dice, const minimax_config_t* config)
 {
-    state_t* state_new = simulate(state_current, piece_index, dice);
+    state_t* state_new = simulate(state_current, piece_index, dice, config);
     if (!state_new)
     {
         // Movement is not possible
@@ -132,38 +133,39 @@ void reset_all_state_child_iters(state_t* state_root)
     state_iterate_over_all_children_and_execute(state_root, 0, state_reset_child_iter);
 }
 
-void calculate_all_children_by_piece(state_t* state, const short piece_index, const short* dice_first)
+void calculate_all_children_by_piece(state_t* state, const short piece_index, const short* dice_first,
+                                     const minimax_config_t* config)
 {
     if (dice_first == NULL)
     {
         for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
         {
-            simulate_wrapper(state, piece_index, dice);
+            simulate_wrapper(state, piece_index, dice, config);
         }
     }
     else
     {
         // Known dice throw
-        simulate_wrapper(state, piece_index, *dice_first);
+        simulate_wrapper(state, piece_index, *dice_first, config);
     }
 }
 
 float minimax(state_t* state_current, const size_t depth, const bool maximize, const short* dice_first,
-              const int player_to_maximize)
+              const minimax_config_t* config)
 {
     if (depth == 0)
     {
-        state_current->eval = evaluate(state_current->parent, state_current, player_to_maximize);
+        state_current->eval = evaluate(state_current->parent, state_current, config);
         return state_current->eval;
     }
 
     if (maximize)
     {
-        for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
+        for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player; piece_index++)
         {
             // Calculate all children from piece_index
             const size_t index_child_start = state_current->child_iter_max + 1;
-            calculate_all_children_by_piece(state_current, piece_index, dice_first);
+            calculate_all_children_by_piece(state_current, (short)piece_index, dice_first, config);
             const size_t index_child_end = state_current->child_iter_max + 1;
 
             if (index_child_end == index_child_start)
@@ -177,9 +179,10 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
             {
                 state_t* child = state_current->children[index_child];
-                const bool maximize_next_level = child->player_current == player_to_maximize;
+                const bool maximize_next_level = (config->player_0_maximize && child->player_current == 0) ||
+                    (!config->player_0_maximize && child->player_current == 1);
 
-                const float eval = minimax(child, depth - 1, maximize_next_level, NULL, player_to_maximize);
+                const float eval = minimax(child, depth - 1, maximize_next_level, NULL, config);
 
                 if (state_current->children[index_child]->dice != 0)
                 {
@@ -199,6 +202,7 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             state_current->eval = state_current->alpha = fmaxf(state_current->alpha, eval_min);
             if (state_current->beta <= state_current->alpha)
             {
+                printf("Prune\n");
                 break;
             }
         }
@@ -209,11 +213,11 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
     {
         state_current->eval = +FLT_MAX;
 
-        for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
+        for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player; piece_index++)
         {
             // Calculate all children from piece_index
             const size_t index_child_start = state_current->child_iter_max + 1;
-            calculate_all_children_by_piece(state_current, piece_index, dice_first);
+            calculate_all_children_by_piece(state_current, (short)piece_index, dice_first, config);
             const size_t index_child_end = state_current->child_iter_max + 1;
 
             if (index_child_end == index_child_start)
@@ -227,9 +231,10 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
             {
                 state_t* child = state_current->children[index_child];
-                const bool maximize_next_level = child->player_current == player_to_maximize;
+                const bool maximize_next_level = (config->player_0_maximize && child->player_current == 0) ||
+                    (!config->player_0_maximize && child->player_current == 1);
 
-                const float eval = minimax(child, depth - 1, maximize_next_level, NULL, player_to_maximize);
+                const float eval = minimax(child, depth - 1, maximize_next_level, NULL, config);
 
                 if (state_current->children[index_child]->dice != 0)
                 {
@@ -249,6 +254,7 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
             state_current->eval = state_current->beta = fminf(state_current->beta, eval_min);
             if (state_current->beta <= state_current->alpha)
             {
+                printf("Prune\n");
                 break;
             }
         }
@@ -258,9 +264,9 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
     assert(false);
 }
 
-char get_best_move(state_t* state_root, const short* dice_first, const int player_to_maximize)
+char get_best_move(state_t* state_root, const short* dice_first, const minimax_config_t* config)
 {
-    const float i = minimax(state_root, STEPS_IN_FUTURE, true, dice_first, player_to_maximize);
+    const float i = minimax(state_root, config->depth, true, dice_first, config);
     assert(i == state_root->eval);
 
     char moved_piece = -1;
@@ -279,13 +285,14 @@ char get_best_move(state_t* state_root, const short* dice_first, const int playe
         }
     }
 
-#if VISUALIZE
-    reset_all_state_child_iters(state_root);
-    visualize_graph(state_root);
+    if (config->visualize_config.enable)
+    {
+        reset_all_state_child_iters(state_root);
+        visualize_graph(state_root, config);
 
-    reset_all_state_child_iters(state_root);
-    visualize_path(state_root);
-#endif /* VISUALIZE */
+        reset_all_state_child_iters(state_root);
+        visualize_path(state_root, config);
+    }
 
     cleanup(state_root);
     state_reset_ids();
@@ -293,33 +300,31 @@ char get_best_move(state_t* state_root, const short* dice_first, const int playe
     return moved_piece;
 }
 
-float evaluate(const state_t* state_current, const state_t* state_new, const int player_to_maximize)
+float evaluate(const state_t* state_current, const state_t* state_new, const minimax_config_t* config)
 {
-    assert((player_to_maximize == 1 || player_to_maximize == 2) && "Incorrect player");
-
-    if (state_check_win(state_new))
+    if (state_check_win(state_new, config))
     {
         return +FLT_MAX;
     }
 
-    const uint32_t pieces_new_player_max = player_to_maximize == 1 ? state_new->pieces_1 : state_new->pieces_2;
-    const uint32_t pieces_new_player_min = player_to_maximize == 1 ? state_new->pieces_2 : state_new->pieces_1;
-    const uint32_t pieces_current_player_min = state_new->second_throw && player_to_maximize == 1
-        ? state_current->pieces_2
-        : state_new->second_throw ? state_current->pieces_1
-        : player_to_maximize == 1 ? state_current->pieces_2
-                                  : state_current->pieces_1;
+    const uint32_t pieces_new_player_max = config->player_0_maximize ? state_new->pieces_0 : state_new->pieces_1;
+    const uint32_t pieces_new_player_min = config->player_0_maximize ? state_new->pieces_1 : state_new->pieces_0;
+    const uint32_t pieces_current_player_min = state_new->second_throw && config->player_0_maximize
+        ? state_current->pieces_1
+        : state_new->second_throw   ? state_current->pieces_0
+        : config->player_0_maximize ? state_current->pieces_1
+                                    : state_current->pieces_0;
 
     float points_total = 0.0f;
 
-    for (short piece_index = 0; piece_index < NUM_OF_PIECES_PER_PLAYER; piece_index++)
+    for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player; piece_index++)
     {
         PIECE_FIELD_GET(piece_field, pieces_new_player_max, piece_index);
 
         // Base points
-        points_total += evaluation_base_points[piece_field];
+        points_total += config->eval_config.points_base[piece_field];
         // Rosette Bonus
-        points_total += evaluation_rosette_bonus[piece_field] * (float)EVAL_MULTIPLIER_ROSETTE;
+        points_total += config->eval_config.points_rosette[piece_field] * config->eval_config.multiplier_rosette;
 
         if (piece_field == FIELD_START || piece_field == 14 || piece_field == 15 || piece_field == FIELD_FINISH)
         {
@@ -332,12 +337,12 @@ float evaluate(const state_t* state_current, const state_t* state_new, const int
         short count_killable_pieces_of_other_player = 0;
         for (short i = 1; i <= MAX_DICE_THROW; i++)
         {
-            if (any_piece_on_field(pieces_new_player_min, piece_field + i, NULL))
+            if (any_piece_on_field(pieces_new_player_min, piece_field + i, NULL, config))
             {
                 count_killable_pieces_of_other_player += 1;
             }
         }
-        points_total += (float)(count_killable_pieces_of_other_player * EVAL_MULTIPLIER_KILLABLE);
+        points_total += (float)count_killable_pieces_of_other_player * config->eval_config.multiplier_killable;
 
         // Killed by other player
         if (6 <= piece_field)
@@ -345,20 +350,21 @@ float evaluate(const state_t* state_current, const state_t* state_new, const int
             short count_attacker_pieces_of_other_player = 0;
             for (short i = 1; i <= MAX_DICE_THROW; i++)
             {
-                if (any_piece_on_field(pieces_new_player_min, piece_field - i, NULL))
+                if (any_piece_on_field(pieces_new_player_min, piece_field - i, NULL, config))
                 {
                     count_attacker_pieces_of_other_player += 1;
                 }
             }
-            points_total += (float)(count_attacker_pieces_of_other_player * EVAL_MULTIPLIER_ATTACKER);
+            points_total += (float)count_attacker_pieces_of_other_player * config->eval_config.multiplier_attacker;
         }
     }
 
-    if (player_to_maximize == state_current->player_current)
+    if ((config->player_0_maximize && state_current->player_current == 0) ||
+        (!config->player_0_maximize && state_current->player_current == 1))
     {
         // Improvement of state
         short count_pieces_other_player_start_current = 0;
-        for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
+        for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
         {
             PIECE_FIELD_GET(piece_field, pieces_current_player_min, i);
             if (piece_field == FIELD_START)
@@ -367,7 +373,7 @@ float evaluate(const state_t* state_current, const state_t* state_new, const int
             }
         }
         short count_pieces_other_player_start_new = 0;
-        for (short i = 0; i < NUM_OF_PIECES_PER_PLAYER; i++)
+        for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
         {
             PIECE_FIELD_GET(piece_field, pieces_new_player_min, i);
             if (piece_field == FIELD_START)
@@ -377,12 +383,12 @@ float evaluate(const state_t* state_current, const state_t* state_new, const int
         }
 
         const bool kill_happens = count_pieces_other_player_start_new != count_pieces_other_player_start_current;
-        points_total += (float)kill_happens * EVAL_ADDER_KILL_HAPPENS;
+        points_total += (float)kill_happens * config->eval_config.adder_kill_happens;
     }
 
     // scale points_total with throw_probabilty to strengthen dice throws with high probability
     // negative points_total will always be < 0
     const float points_final = points_total * throw_probability[state_new->dice];
 
-    return (float)ceil(points_final * 1000.0) / 1000.0;
+    return (float)(ceil(points_final * 1000.0) / 1000.0);
 }

@@ -1,13 +1,14 @@
 #include "visualize.h"
 
-#include "config.h"
 #include "graphviz.h"
 
 #include <assert.h>
 
-void visualize_graph(state_t* state_root)
+void visualize_graph(state_t* state_root, const minimax_config_t* config)
 {
-    visualize_init(VISUALIZE_GRAPH_FILE_PATH);
+    assert(config->visualize_config.graph_path != NULL);
+
+    visualize_init(config->visualize_config.graph_path);
 
     state_t* state_current = state_root;
 
@@ -46,8 +47,9 @@ void visualize_graph(state_t* state_root)
     visualize_free();
 }
 
-void visualize_path(state_t* state_root)
+void visualize_path(state_t* state_root, const minimax_config_t* config)
 {
+#if false
     visualize_init(VISUALIZE_GRAPH_PATH_FILE_PATH);
 
     state_t* state_current = state_root;
@@ -88,4 +90,5 @@ void visualize_path(state_t* state_root)
 
     visualize_finalize();
     visualize_free();
+#endif
 }

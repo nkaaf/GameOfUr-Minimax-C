@@ -1,5 +1,5 @@
-#ifndef GRAPHVIZ_H
-#define GRAPHVIZ_H
+#ifndef MINIMAX_GRAPHVIZ_H
+#define MINIMAX_GRAPHVIZ_H
 
 #include <stddef.h>
 
@@ -13,4 +13,4 @@ void visualize_add_edge(size_t id_start, size_t id_end, short dice, short moved_
 
 void visualize_finalize();
 
-#endif // GRAPHVIZ_H
+#endif // MINIMAX_GRAPHVIZ_H

@@ -1,9 +1,11 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef MINIMAX_COMMON_H
+#define MINIMAX_COMMON_H
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include "config.h"
 
 #define FIELD_FINISH ((uint8_t)0)
 #define FIELD_START ((uint8_t)1)
@@ -15,9 +17,9 @@
 const static float throw_probability[] = {1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
 
 #define MASK_PIECE_0 ((uint32_t)0xF)
-#define MASK_PIECE(n) ((uint32_t) (MASK_PIECE_0 << ((n) * 4)))
+#define MASK_PIECE(n) ((uint32_t)(MASK_PIECE_0 << ((n) * 4)))
 
-#define GET_PIECE_MASK(var_piece_mask, piece_index) uint32_t (var_piece_mask) = MASK_PIECE((piece_index))
+#define GET_PIECE_MASK(var_piece_mask, piece_index) uint32_t(var_piece_mask) = MASK_PIECE((piece_index))
 
 #define PIECE_FIELD_SET(piece_index, pos) (((uint32_t)pos) << (4 * (piece_index)))
 #define PIECE_FIELD_GET(var_piece_field, pieces, piece_index)                                                          \
@@ -32,6 +34,6 @@ const static float throw_probability[] = {1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f
 #define PIECE_CANNOT_FINISH(field_next) ((field_next) > 16)
 #define PIECE_CAN_FINISH(field_next) ((field_next) == 16)
 
-bool any_piece_on_field(uint32_t pieces, uint8_t pos, size_t* piece_index);
+bool any_piece_on_field(uint32_t pieces, uint8_t pos, size_t* piece_index, const minimax_config_t* config);
 
-#endif // COMMON_H
+#endif // MINIMAX_COMMON_H

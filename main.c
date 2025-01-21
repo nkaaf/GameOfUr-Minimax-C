@@ -1,16 +1,50 @@
 #include <stdio.h>
 
-
+#include "common.h"
 #include "config.h"
 #include "sim.h"
 
 int main(void)
 {
-    state_t* state_root = state_init(SCORE_1_START, SCORE_2_START, PIECES_1_START, PIECES_2_START, PLAYER_CURRENT_START,
-                                     PLAYER_OTHER_START);
+    const float points_base[] = {100, -.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+    const float points_rosette[] = {
+        0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1,
+        0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1};
+    const float multiplier_kill_distance[] = {-1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
+
+    const minimax_config_t config = {
+        .depth = 4,
+        .rosette_middle_safe = true,
+        .pieces_player_0 =
+            (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |
+             PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |
+             PIECE_FIELD_SET(6, FIELD_START)),
+        .pieces_player_1 =
+            (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |
+             PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |
+             PIECE_FIELD_SET(6, FIELD_START)),
+        .score_player_0 = 0,
+        .score_player_1 = 0,
+        .num_of_pieces_per_player = 7,
+        .player_0_maximize = true,
+        // TODO: Implement
+        .alpha_beta_pruning_enable = true,
+        .eval_config = {.points_base = points_base,
+                        .points_rosette = points_rosette,
+                        .multiplier_rosette = 30,
+                        .multiplier_killable = 10,
+                        .multiplier_attacker = -1.5,
+                        .multiplier_kill_distance = multiplier_kill_distance,
+                        .adder_kill_happens = 100,
+                        // TODO: Implement
+                        .strategy_evaluation_propagation = MINIMAX_GAMEOFUR_STRATEGY_EXPECTED_VALUE},
+        .visualize_config = {.enable = true, .depth = 7, .graph_path = "Graph.gv"}};
+
+    state_t* state_root = state_init(config.score_player_0, config.score_player_1, config.pieces_player_0,
+                                     config.pieces_player_1, 0, 1, &config);
 
     short first_dice = 1;
-    printf("Move piece: %d", get_best_move(state_root, NULL, PLAYER_TO_MAX));
+    printf("Move piece: %d", get_best_move(state_root, NULL, &config));
 
     return 0;
 }

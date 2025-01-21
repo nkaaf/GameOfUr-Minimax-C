@@ -53,20 +53,9 @@ void visualize_add_node(const size_t id, const float eval, const float alpha, co
                         const short player_current)
 {
     assert(file && "file is NULL");
+    assert(player_current == 0 || player_current == 1 && "Invalid player");
 
-    char* color;
-    if (player_current == 1)
-    {
-        color = "green";
-    }
-    else if (player_current == 2)
-    {
-        color = "red";
-    }
-    else
-    {
-        assert(false && "player_current is invalid");
-    }
+    const char* color = player_current == 0 ? "green" : "red";
 
     char *alpha_val, *beta_val, *eval_val;
     const bool alpha_dyn_alloc = determine_float_str(alpha, &alpha_val);
