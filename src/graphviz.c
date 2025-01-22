@@ -1,6 +1,7 @@
 #include "visualize.h"
 
 #include <assert.h>
+#include <common.h>
 #include <float.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -82,8 +83,11 @@ void visualize_add_node(const size_t id, const float eval, const float alpha, co
 void visualize_add_edge(const size_t id_start, const size_t id_end, const short* dices, const size_t dices_len,
                         const short moved_piece)
 {
-    const size_t string_len = dices_len * sizeof(short) + 1;
-    char *dices_str = calloc(string_len, sizeof(char));
+    assert(MAX_DICE_THROW <= 9 && "Implementation can only allow dices below 10");
+
+    const size_t string_len =
+        (dices_len - 1) * dices_len + dices_len + 1; // count of ',' + count of dices + Null-Terminator
+    char* dices_str = calloc(string_len, sizeof(char));
     assert(dices_str && "malloc failed");
 
     sprintf(dices_str, "%d", dices[0]);
@@ -91,7 +95,7 @@ void visualize_add_edge(const size_t id_start, const size_t id_end, const short*
     {
         sprintf(dices_str, "%s,%d", dices_str, dices[i]);
     }
-    dices_str[string_len] = '\0';
+    dices_str[string_len -1] = '\0';
     fprintf(file, "\t%lu -- %lu\n [label=\"D: %s\nMP: %d\"]\n", id_start, id_end, dices_str, moved_piece);
     free(dices_str);
 }
