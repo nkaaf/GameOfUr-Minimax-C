@@ -10,7 +10,7 @@ int main(void)
     float multiplier_kill_distance[] = {-1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
 
     const minimax_config_t config = {
-        .depth = 1,
+        .depth = 4,
         .rosette_middle_safe = true,
         .pieces_player_0 =
             (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |

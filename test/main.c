@@ -6,11 +6,8 @@
 #include "sim.h"
 #include "state.h"
 
-const static float points_base[] = {100, -.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
-const static float points_rosette[] = {
-    0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1,
-    0, 1.0f / 16.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1};
-const static float multiplier_kill_distance[] = {-1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
+static float points_base[] = {100, -.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+static float multiplier_kill_distance[] = {-1, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 4.0f, 1.0f / 16.0f};
 
 const static minimax_config_t config = {
     .depth = 4,
@@ -29,7 +26,6 @@ const static minimax_config_t config = {
     .player_0_maximize = true,
     .alpha_beta_pruning_enable = true,
     .eval_config = {.points_base = points_base,
-                    .points_rosette = points_rosette,
                     .adder_rosette = 30,
                     .multiplier_killable = 10,
                     .multiplier_attacker = -1.5,
@@ -54,14 +50,9 @@ void test0()
 
     const state_t* state_current = set_up_state();
 
-    state_t* state_expected = set_up_state();
-    state_swap_player(state_expected);
-    state_expected->dice = dice;
-    state_expected->moved_piece = piece_index;
-
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
-    assert(state_equals(state_new, state_expected));
+    assert(!state_new);
 }
 
 void test1()
@@ -78,7 +69,7 @@ void test1()
 
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
-    assert(state_new == NULL);
+    assert(!state_new);
 }
 
 void test2()
@@ -95,7 +86,7 @@ void test2()
 
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
-    assert(state_new == NULL);
+    assert(!state_new);
 }
 
 void test3()
@@ -103,6 +94,7 @@ void test3()
     // Piece finishes
 
     const short piece_index = 0, dice = 2;
+    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -114,7 +106,7 @@ void test3()
     state_expected->score_0 = 1;
     state_expected->pieces_0 &= piece_mask_clear;
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, FIELD_FINISH);
-    state_expected->dice = dice;
+    state_dices_setter(state_expected, dices, 1);
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
@@ -137,7 +129,7 @@ void test4()
 
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
-    assert(state_new == NULL);
+    assert(!state_new);
 }
 
 void test5()
@@ -156,7 +148,7 @@ void test5()
 
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
-    assert(state_new == NULL);
+    assert(!state_new);
 }
 
 void test6()
@@ -164,6 +156,7 @@ void test6()
     // Normal move
 
     const short piece_index = 0, dice = 1;
+    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -174,7 +167,7 @@ void test6()
     state_t* state_expected = set_up_state();
     state_expected->pieces_0 &= piece_mask_clear;
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, 7);
-    state_expected->dice = dice;
+    state_dices_setter(state_expected, dices, 1);
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
@@ -187,6 +180,7 @@ void test7()
 {
     // Catch other player
     const short piece_index = 0, dice = 1;
+    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -201,7 +195,7 @@ void test7()
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, 8);
     state_expected->pieces_1 &= piece_mask_clear;
     state_expected->pieces_1 |= PIECE_FIELD_SET(piece_index, FIELD_START);
-    state_expected->dice = dice;
+    state_dices_setter(state_expected, dices, 1);
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
@@ -214,6 +208,7 @@ void test8()
 {
     // Move on Rosette Field
     const short piece_index = 0, dice = 1;
+    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -224,7 +219,7 @@ void test8()
     state_t* state_expected = set_up_state();
     state_expected->pieces_0 &= piece_mask_clear;
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, 5);
-    state_expected->dice = dice;
+    state_dices_setter(state_expected, dices, 1);
     state_expected->moved_piece = piece_index;
     state_expected->second_throw = true;
 
