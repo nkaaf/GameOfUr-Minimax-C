@@ -48,11 +48,13 @@ void test0()
 
     const short piece_index = 0, dice = 0;
 
-    const state_t* state_current = set_up_state();
+    state_t* state_current = set_up_state();
 
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(!state_new);
+
+    cleanup(state_current);
 }
 
 void test1()
@@ -70,6 +72,8 @@ void test1()
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(!state_new);
+
+    cleanup(state_current);
 }
 
 void test2()
@@ -87,6 +91,8 @@ void test2()
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(!state_new);
+
+    cleanup(state_current);
 }
 
 void test3()
@@ -110,9 +116,13 @@ void test3()
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
-    const state_t* state_new = simulate(state_current, piece_index, dice, &config);
+    state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(state_equals(state_expected, state_new));
+
+    cleanup(state_current);
+    cleanup(state_expected);
+    cleanup(state_new);
 }
 
 void test4()
@@ -130,6 +140,8 @@ void test4()
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(!state_new);
+
+    cleanup(state_current);
 }
 
 void test5()
@@ -149,6 +161,8 @@ void test5()
     const state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(!state_new);
+
+    cleanup(state_current);
 }
 
 void test6()
@@ -171,9 +185,13 @@ void test6()
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
-    const state_t* state_new = simulate(state_current, piece_index, dice, &config);
+    state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(state_equals(state_expected, state_new));
+
+    cleanup(state_current);
+    cleanup(state_expected);
+    cleanup(state_new);
 }
 
 void test7()
@@ -199,9 +217,13 @@ void test7()
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
-    const state_t* state_new = simulate(state_current, piece_index, dice, &config);
+    state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(state_equals(state_expected, state_new));
+
+    cleanup(state_current);
+    cleanup(state_expected);
+    cleanup(state_new);
 }
 
 void test8()
@@ -223,9 +245,13 @@ void test8()
     state_expected->moved_piece = piece_index;
     state_expected->second_throw = true;
 
-    const state_t* state_new = simulate(state_current, piece_index, dice, &config);
+    state_t* state_new = simulate(state_current, piece_index, dice, &config);
 
     assert(state_equals(state_expected, state_new));
+
+    cleanup(state_current);
+    cleanup(state_expected);
+    cleanup(state_new);
 }
 
 void test9()
@@ -244,6 +270,8 @@ void test9()
     assert(state->pieces_0 == 0xA9999);
     state_piece_move(state, 0, 4, 0x9);
     assert(state->pieces_0 == 0x99999);
+
+    cleanup(state);
 }
 
 int main()

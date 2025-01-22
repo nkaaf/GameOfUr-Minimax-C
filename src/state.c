@@ -18,6 +18,25 @@ state_t* state_init(const short score_0, const short score_1, const uint32_t pie
         assert(false && "malloc failed");
     }
 
+    state->score_0 = score_0;
+    state->score_1 = score_1;
+
+    state->pieces_0 = pieces_0;
+    state->pieces_1 = pieces_1;
+
+    state->player_current = player_current;
+    state->player_other = player_other;
+
+
+    state->dices = NULL;
+    state->dices_count = 0;
+
+    state->moved_piece = -1;
+
+    state->second_throw = false;
+
+    state->parent = NULL;
+
     state->children = calloc(config->num_of_pieces_per_player * DICE_RANGE_TRUE, sizeof(state_t*));
     if (!state->children)
     {
@@ -25,25 +44,14 @@ state_t* state_init(const short score_0, const short score_1, const uint32_t pie
         assert(false && "calloc failed");
     }
 
-    state->score_0 = score_0;
-    state->score_1 = score_1;
-    state->player_current = player_current;
-    state->player_other = player_other;
-    state->pieces_0 = pieces_0;
-    state->pieces_1 = pieces_1;
+    state->eval = -FLT_MAX;
+    state->alpha = -FLT_MAX;
+    state->beta = +FLT_MAX;
 
-    state->parent = NULL;
-
-    state->second_throw = false;
     state->child_iter = -1;
     state->child_iter_max = -1;
 
-    state->moved_piece = -1;
-
     state->id = ++id;
-
-    state->alpha = -FLT_MAX;
-    state->beta = +FLT_MAX;
 
     return state;
 }
@@ -62,6 +70,9 @@ void state_free(state_t* state)
         if (state->children)
         {
             free(state->children);
+        }
+        if (state->dices) {
+            free(state->dices);
         }
         free(state);
     }
