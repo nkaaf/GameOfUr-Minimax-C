@@ -30,7 +30,7 @@ const static minimax_config_t config = {
     .alpha_beta_pruning_enable = true,
     .eval_config = {.points_base = points_base,
                     .points_rosette = points_rosette,
-                    .multiplier_rosette = 30,
+                    .adder_rosette = 30,
                     .multiplier_killable = 10,
                     .multiplier_attacker = -1.5,
                     .multiplier_kill_distance = multiplier_kill_distance,

@@ -14,7 +14,8 @@ struct state_s
     short score_0, score_1;
     uint32_t pieces_0, pieces_1;
     short player_current, player_other;
-    short dice;
+    short* dices;
+    size_t dices_count;
     short moved_piece;
     bool second_throw;
     state_t* parent;
@@ -26,6 +27,8 @@ struct state_s
 
 state_t* state_init(short score_0, short score_1, uint32_t pieces_0, uint32_t pieces_1, short player_current,
                     short player_other, const minimax_config_t* config);
+
+void state_dices_setter(state_t* state, const short* dices, const size_t dices_len);
 
 void state_free(state_t* state);
 

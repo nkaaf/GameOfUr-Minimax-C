@@ -79,9 +79,11 @@ void visualize_add_node(const size_t id, const float eval, const float alpha, co
     }
 }
 
-void visualize_add_edge(const size_t id_start, const size_t id_end, const short dice, const short moved_piece)
+void visualize_add_edge(const size_t id_start, const size_t id_end, const short* dices, const size_t dices_len,
+                        const short moved_piece)
 {
-    fprintf(file, "\t%lu -- %lu\n [label=\"D: %d\nMP: %d\"]\n", id_start, id_end, dice, moved_piece);
+    // TODO:
+    fprintf(file, "\t%lu -- %lu\n [label=\"D: %d\nMP: %d\"]\n", id_start, id_end, dices[0], moved_piece);
 }
 
 void visualize_finalize()

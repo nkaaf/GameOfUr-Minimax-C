@@ -28,7 +28,7 @@ void visualize_graph(state_t* state_root, const minimax_config_t* config)
                 const state_t* child = state_current->children[iter];
                 assert(child && "child is NULL");
 
-                visualize_add_edge(state_current->id, child->id, child->dice, child->moved_piece);
+                visualize_add_edge(state_current->id, child->id, child->dices, child->dices_count, child->moved_piece);
             }
         }
 
