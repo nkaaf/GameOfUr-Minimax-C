@@ -13,7 +13,7 @@ int main(void)
         .depth = 1,
         .rosette_middle_safe = true,
         .pieces_player_0 =
-            (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, 2) | PIECE_FIELD_SET(2, 3) |
+            (PIECE_FIELD_SET(0, FIELD_START) | PIECE_FIELD_SET(1, FIELD_START) | PIECE_FIELD_SET(2, FIELD_START) |
              PIECE_FIELD_SET(3, FIELD_START) | PIECE_FIELD_SET(4, FIELD_START) | PIECE_FIELD_SET(5, FIELD_START) |
              PIECE_FIELD_SET(6, FIELD_START)),
         .pieces_player_1 =

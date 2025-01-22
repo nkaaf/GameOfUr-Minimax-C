@@ -82,8 +82,18 @@ void visualize_add_node(const size_t id, const float eval, const float alpha, co
 void visualize_add_edge(const size_t id_start, const size_t id_end, const short* dices, const size_t dices_len,
                         const short moved_piece)
 {
-    // TODO:
-    fprintf(file, "\t%lu -- %lu\n [label=\"D: %d\nMP: %d\"]\n", id_start, id_end, dices[0], moved_piece);
+    const size_t string_len = dices_len * sizeof(short) + 1;
+    char *dices_str = calloc(string_len, sizeof(char));
+    assert(dices_str && "malloc failed");
+
+    sprintf(dices_str, "%d", dices[0]);
+    for (size_t i = 1; i < dices_len; i++)
+    {
+        sprintf(dices_str, "%s,%d", dices_str, dices[i]);
+    }
+    dices_str[string_len] = '\0';
+    fprintf(file, "\t%lu -- %lu\n [label=\"D: %s\nMP: %d\"]\n", id_start, id_end, dices_str, moved_piece);
+    free(dices_str);
 }
 
 void visualize_finalize()

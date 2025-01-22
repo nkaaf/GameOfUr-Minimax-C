@@ -52,7 +52,7 @@ void state_dices_setter(state_t* state, const short* dices, const size_t dices_l
 {
     state->dices_count = dices_len;
     state->dices = calloc(state->dices_count, sizeof(short));
-    memcpy(state->dices, dices, state->dices_count);
+    memcpy(state->dices, dices, state->dices_count * sizeof(short));
 }
 
 void state_free(state_t* state)

@@ -169,7 +169,7 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
 
             // Calculate all children of piece
             const size_t index_child_start = state_current->child_iter_max + 1;
-            const size_t dice_with_no_state_change_len = calculate_all_children_by_piece(
+            const size_t dices_with_no_state_change_len = calculate_all_children_by_piece(
                 state_current, (short)piece_index, dice, dices_with_no_state_change, config);
             const size_t index_child_end = state_current->child_iter_max + 1;
 
@@ -181,7 +181,7 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
                     state_current->score_0, state_current->score_1, state_current->pieces_0, state_current->pieces_1,
                     state_current->player_current, state_current->player_other, config);
                 state_swap_player(state_unchanged);
-                state_dices_setter(state_unchanged, dices_with_no_state_change, dice_with_no_state_change_len);
+                state_dices_setter(state_unchanged, dices_with_no_state_change, dices_with_no_state_change_len);
                 state_unchanged->moved_piece = (short)piece_index;
                 state_add_child(state_current, state_unchanged);
             }
@@ -231,137 +231,6 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
         state_current->eval += evaluation_score;
     }
     return state_current->eval;
-
-
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-    //---------------------------------------------------------------
-
-
-    // if (maximize)
-    //{
-    //     for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player; piece_index++)
-    //     {
-    //         // Calculate all children from piece_index
-    //         const size_t index_child_start = state_current->child_iter_max + 1;
-    //         calculate_all_children_by_piece(state_current, (short)piece_index, dice_first, config);
-    //         const size_t index_child_end = state_current->child_iter_max + 1;
-    //
-    //        if (index_child_end == index_child_start)
-    //        {
-    //            // No state was created
-    //            continue;
-    //        }
-    //
-    //        // get worst case of children evaluation
-    //        float eval_min = +FLT_MAX;
-    //        for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
-    //        {
-    //            state_t* child = state_current->children[index_child];
-    //
-    //            // Check if the next level is to maximize or to minimize ("fix" for second throw)
-    //            const bool maximize_next_level = (config->player_0_maximize && child->player_current == 0) ||
-    //                (!config->player_0_maximize && child->player_current == 1);
-    //
-    //            const float eval = minimax(child, depth - 1, maximize_next_level, NULL, config);
-    //
-    //            if (state_current->children[index_child]->dice != 0)
-    //            {
-    //                // ignore child with dice == 0
-    //
-    //                eval_min = fminf(eval_min, eval);
-    //            }
-    //        }
-    //
-    //        if (state_current->child_iter_max == -1 ||
-    //            (state_current->child_iter_max == 0 && state_current->children[0]->dice == 0))
-    //        {
-    //            // Compensation, if no move, or only one move (dice == 0) is possible
-    //            eval_min = -FLT_MAX;
-    //        }
-    //
-    //        state_current->eval = state_current->alpha = fmaxf(state_current->alpha, eval_min);
-    //        if (state_current->beta <= state_current->alpha)
-    //        {
-    //            break;
-    //        }
-    //    }
-    //
-    //    return state_current->eval;
-    //}
-    // else
-    //{
-    //    state_current->eval = +FLT_MAX;
-    //
-    //    for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player; piece_index++)
-    //    {
-    //        // Calculate all children from piece_index
-    //        const size_t index_child_start = state_current->child_iter_max + 1;
-    //        calculate_all_children_by_piece(state_current, (short)piece_index, dice_first, config);
-    //        const size_t index_child_end = state_current->child_iter_max + 1;
-    //
-    //        if (index_child_end == index_child_start)
-    //        {
-    //            // No state was created
-    //            continue;
-    //        }
-    //
-    //        // get worst case of children evaluation
-    //        float eval_min = +FLT_MAX;
-    //        for (size_t index_child = index_child_start; index_child < index_child_end; index_child++)
-    //        {
-    //            state_t* child = state_current->children[index_child];
-    //            const bool maximize_next_level = (config->player_0_maximize && child->player_current == 0) ||
-    //                (!config->player_0_maximize && child->player_current == 1);
-    //
-    //            const float eval = minimax(child, depth - 1, maximize_next_level, NULL, config);
-    //
-    //            if (state_current->children[index_child]->dice != 0)
-    //            {
-    //                // ignore child with dice == 0
-    //
-    //                eval_min = fminf(eval_min, eval);
-    //            }
-    //        }
-    //
-    //        if (state_current->child_iter_max == -1 ||
-    //            (state_current->child_iter_max == 0 && state_current->children[0]->dice == 0))
-    //        {
-    //            // Compensation, if no move, or only one move (dice == 0) is possible
-    //            eval_min = -FLT_MAX;
-    //        }
-    //
-    //        state_current->eval = state_current->beta = fminf(state_current->beta, eval_min);
-    //        if (state_current->beta <= state_current->alpha)
-    //        {
-    //            break;
-    //        }
-    //    }
-    //    return state_current->eval;
-    //}
-    //
-    // assert(false);
 }
 
 char get_best_move(state_t* state_root, const short* dice_first, const minimax_config_t* config)
