@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stddef.h>
 
 #include "common.h"
 #include "config.h"
@@ -100,7 +99,6 @@ void test3()
     // Piece finishes
 
     const short piece_index = 0, dice = 2;
-    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -112,7 +110,7 @@ void test3()
     state_expected->score_0 = 1;
     state_expected->pieces_0 &= piece_mask_clear;
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, FIELD_FINISH);
-    state_dices_setter(state_expected, dices, 1);
+    state_expected->dice = dice;
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
@@ -170,7 +168,6 @@ void test6()
     // Normal move
 
     const short piece_index = 0, dice = 1;
-    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -181,7 +178,7 @@ void test6()
     state_t* state_expected = set_up_state();
     state_expected->pieces_0 &= piece_mask_clear;
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, 7);
-    state_dices_setter(state_expected, dices, 1);
+    state_expected->dice = dice;
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
@@ -198,7 +195,6 @@ void test7()
 {
     // Catch other player
     const short piece_index = 0, dice = 1;
-    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -213,7 +209,7 @@ void test7()
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, 8);
     state_expected->pieces_1 &= piece_mask_clear;
     state_expected->pieces_1 |= PIECE_FIELD_SET(piece_index, FIELD_START);
-    state_dices_setter(state_expected, dices, 1);
+    state_expected->dice = dice;
     state_expected->moved_piece = piece_index;
     state_swap_player(state_expected);
 
@@ -230,7 +226,6 @@ void test8()
 {
     // Move on Rosette Field
     const short piece_index = 0, dice = 1;
-    const short dices[] = {dice};
 
     state_t* state_current = set_up_state();
     GET_PIECE_MASK(piece_mask, piece_index);
@@ -241,7 +236,7 @@ void test8()
     state_t* state_expected = set_up_state();
     state_expected->pieces_0 &= piece_mask_clear;
     state_expected->pieces_0 |= PIECE_FIELD_SET(piece_index, 5);
-    state_dices_setter(state_expected, dices, 1);
+    state_expected->dice = dice;
     state_expected->moved_piece = piece_index;
     state_expected->second_throw = true;
 

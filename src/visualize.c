@@ -16,8 +16,15 @@ void visualize_graph(state_t* state_root, const minimax_config_t* config)
     {
         const short player_current = state_current->player_current;
 
-        visualize_add_node(state_current->id, state_current->eval, state_current->alpha, state_current->beta,
-                           player_current);
+        if (config->alpha_beta_pruning_enable)
+        {
+            visualize_add_node_alpha_beta(state_current->id, state_current->eval, state_current->alpha,
+                                          state_current->beta, player_current);
+        }
+        else
+        {
+            visualize_add_node(state_current->id, state_current->eval, player_current);
+        }
 
         if (state_current->child_iter_max != -1)
         {
@@ -28,7 +35,7 @@ void visualize_graph(state_t* state_root, const minimax_config_t* config)
                 const state_t* child = state_current->children[iter];
                 assert(child && "child is NULL");
 
-                visualize_add_edge(state_current->id, child->id, child->dices, child->dices_count, child->moved_piece);
+                visualize_add_edge(state_current->id, child->id, child->dice, child->moved_piece);
             }
         }
 

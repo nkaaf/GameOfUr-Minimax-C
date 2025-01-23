@@ -39,7 +39,7 @@ int main(void)
                                      config.pieces_player_1, 0, 1, &config);
 
     short first_dice = 1;
-    printf("Move piece: %d", get_best_move(state_root, NULL, &config));
+    printf("Move piece: %d", get_best_piece(state_root, NULL, &config));
 
     return 0;
 }

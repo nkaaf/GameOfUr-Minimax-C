@@ -27,9 +27,7 @@ state_t* state_init(const short score_0, const short score_1, const uint32_t pie
     state->player_current = player_current;
     state->player_other = player_other;
 
-
-    state->dices = NULL;
-    state->dices_count = 0;
+    state->dice = -1;
 
     state->moved_piece = -1;
 
@@ -56,13 +54,6 @@ state_t* state_init(const short score_0, const short score_1, const uint32_t pie
     return state;
 }
 
-void state_dices_setter(state_t* state, const short* dices, const size_t dices_len)
-{
-    state->dices_count = dices_len;
-    state->dices = calloc(state->dices_count, sizeof(short));
-    memcpy(state->dices, dices, state->dices_count * sizeof(short));
-}
-
 void state_free(state_t* state)
 {
     if (state)
@@ -70,9 +61,6 @@ void state_free(state_t* state)
         if (state->children)
         {
             free(state->children);
-        }
-        if (state->dices) {
-            free(state->dices);
         }
         free(state);
     }
@@ -175,10 +163,9 @@ bool state_equals(const state_t* state1, const state_t* state2)
     return state1->score_0 == state2->score_0 && state1->score_1 == state2->score_1 &&
         state1->pieces_0 == state2->pieces_0 && state1->pieces_1 == state2->pieces_1 &&
         state1->player_current == state2->player_current && state1->player_other == state2->player_other &&
-        state1->dices_count == state2->dices_count &&
-        memcmp(state1->dices, state2->dices, state2->dices_count * sizeof(short)) == 0 &&
-        state1->moved_piece == state2->moved_piece && state1->second_throw == state2->second_throw &&
-        state1->parent == state1->parent && state1->children == state1->children && state1->eval == state1->eval &&
+        state1->dice == state2->dice && state1->moved_piece == state2->moved_piece &&
+        state1->second_throw == state2->second_throw && state1->parent == state1->parent &&
+        state1->children == state1->children && state1->eval == state1->eval &&
         state1->child_iter == state1->child_iter && state1->child_iter_max == state1->child_iter_max;
 }
 

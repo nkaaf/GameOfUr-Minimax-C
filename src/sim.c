@@ -66,8 +66,7 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
     state_new = state_init(state_current->score_0, state_current->score_1, state_current->pieces_0,
                            state_current->pieces_1, state_current->player_current, state_current->player_other, config);
 
-    const short dices[] = {dice};
-    state_dices_setter(state_new, dices, 1);
+    state_new->dice = dice;
     state_new->moved_piece = piece_index;
 
     if (PIECE_CAN_FINISH(piece_field_dest))
@@ -107,20 +106,6 @@ state_t* simulate(const state_t* state_current, const short piece_index, const s
     return state_new;
 }
 
-state_t* simulate_wrapper(state_t* state_current, const short piece_index, const short dice,
-                          const minimax_config_t* config)
-{
-    state_t* state_new = simulate(state_current, piece_index, dice, config);
-    if (!state_new)
-    {
-        // Movement is not possible
-        return NULL;
-    }
-
-    state_add_child(state_current, state_new);
-    return state_new;
-}
-
 void cleanup(state_t* state_root) { state_iterate_over_all_children_and_execute(state_root, 0, state_free); }
 
 void reset_all_state_child_iters(state_t* state_root)
@@ -128,29 +113,33 @@ void reset_all_state_child_iters(state_t* state_root)
     state_iterate_over_all_children_and_execute(state_root, 0, state_reset_child_iter);
 }
 
-size_t calculate_all_children_by_piece(state_t* state, const short piece_index, const short* dice_first,
-                                       short* dices_with_no_state_change, const minimax_config_t* config)
+void calculate_all_children_by_piece(state_t* state, const short piece_index, const short* dice_first,
+                                     const minimax_config_t* config)
 {
-    size_t dice_with_no_state_change_len = 0;
-    if (dice_first == NULL)
+    if (dice_first)
     {
-        for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
+        // Known dice throw
+
+        state_t* state_new = simulate(state, piece_index, *dice_first, config);
+
+        if (state_new)
         {
-            if (!simulate_wrapper(state, piece_index, dice, config))
-            {
-                dices_with_no_state_change[dice_with_no_state_change_len++] = dice;
-            }
+            state_add_child(state, state_new);
         }
     }
     else
     {
-        // Known dice throw
-        if (!simulate_wrapper(state, piece_index, *dice_first, config))
+        // Simulate all dices
+
+        for (short dice = MIN_DICE_THROW; dice <= MAX_DICE_THROW; dice++)
         {
-            dices_with_no_state_change[dice_with_no_state_change_len] = *dice_first;
+            state_t* state_new = simulate(state, piece_index, dice, config);
+            if (state_new)
+            {
+                state_add_child(state, state_new);
+            }
         }
     }
-    return dice_with_no_state_change_len;
 }
 
 float minimax(state_t* state_current, const size_t depth, const bool maximize, const short* dice,
@@ -165,30 +154,22 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
         float evaluation_score = maximize ? -FLT_MAX : FLT_MAX;
         for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player; piece_index++)
         {
-            short* dices_with_no_state_change = calloc(DICE_RANGE_TRUE, sizeof(short));
+
+            const int child_index_start = state_current->child_iter_max;
 
             // Calculate all children of piece
-            const size_t index_child_start = state_current->child_iter_max + 1;
-            const size_t dices_with_no_state_change_len = calculate_all_children_by_piece(
-                state_current, (short)piece_index, dice, dices_with_no_state_change, config);
-            const size_t index_child_end = state_current->child_iter_max + 1;
+            calculate_all_children_by_piece(state_current, (short)piece_index, dice, config);
 
-            if (index_child_end - index_child_start != DICE_RANGE_TRUE)
+            if (state_current->child_iter_max == child_index_start)
             {
-                // Not all children states are valid
-                // Create one state for all dice throws which result in no state change.
-                state_t* state_unchanged = state_init(
-                    state_current->score_0, state_current->score_1, state_current->pieces_0, state_current->pieces_1,
-                    state_current->player_current, state_current->player_other, config);
-                state_swap_player(state_unchanged);
-                state_dices_setter(state_unchanged, dices_with_no_state_change, dices_with_no_state_change_len);
-                state_unchanged->moved_piece = (short)piece_index;
-                state_add_child(state_current, state_unchanged);
+                // No possible state was created
+                continue;
             }
-            free(dices_with_no_state_change);
 
+            // Calculate expecting value for all children of this piece
             float expecting_value_acc = 0;
-            for (size_t index_child = index_child_start; index_child <= index_child_end; index_child++)
+            for (size_t index_child = child_index_start + 1; index_child <= state_current->child_iter_max;
+                 index_child++)
             {
                 state_t* child = state_current->children[index_child];
 
@@ -198,15 +179,16 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
 
                 const float eval = minimax(child, depth - 1, maximize_next_level, NULL, piece_index_to_move, config);
 
-                for (size_t dice_index = 0; dice_index < child->dices_count; dice_index++)
-                {
-                    expecting_value_acc += eval * throw_probability[child->dices[dice_index]];
-                }
+                expecting_value_acc += eval * throw_probability[child->dice];
             }
 
+            const float evaluation_score_tmp =
+                evaluation_score; // This is used to check if evaluation score has changed; this prevents that same
+                                  // evaluation scores changed the piece to move
             evaluation_score =
                 maximize ? fmaxf(expecting_value_acc, evaluation_score) : fminf(expecting_value_acc, evaluation_score);
-            if (evaluation_score == expecting_value_acc)
+            if (depth == config->depth && evaluation_score_tmp != evaluation_score &&
+                evaluation_score == expecting_value_acc)
             {
                 // This piece should be moved (current knowledge)
                 *piece_index_to_move = piece_index;
@@ -228,18 +210,39 @@ float minimax(state_t* state_current, const size_t depth, const bool maximize, c
                 }
             }
         }
-        state_current->eval += evaluation_score;
+
+        if (state_current->child_iter_max == -1)
+        {
+            // Edge Case: No piece can be moved
+            // Create unchanged state
+            state_t* state_unchanged =
+                state_init(state_current->score_0, state_current->score_1, state_current->pieces_0,
+                           state_current->pieces_1, state_current->player_current, state_current->player_other, config);
+            state_swap_player(state_unchanged);
+            state_add_child(state_current, state_unchanged);
+
+
+            // Check if the next level is to maximize or to minimize ("fix" for second throw)
+            const bool maximize_next_level = (config->player_0_maximize && state_unchanged->player_current == 0) ||
+                (!config->player_0_maximize && state_unchanged->player_current == 1);
+
+            const float eval =
+                minimax(state_unchanged, depth - 1, maximize_next_level, NULL, piece_index_to_move, config);
+
+            evaluation_score = eval * throw_probability[state_unchanged->dice];
+        }
+        state_current->eval = evaluation_score;
     }
     return state_current->eval;
 }
 
-char get_best_move(state_t* state_root, const short* dice_first, const minimax_config_t* config)
+char get_best_piece(state_t* state_root, const short* dice_first, const minimax_config_t* config)
 {
     size_t piece_index_to_move;
     const float i = minimax(state_root, config->depth, true, dice_first, &piece_index_to_move, config);
     assert(i == state_root->eval);
 
-    const char moved_piece = piece_index_to_move;
+    const char moved_piece = (char)piece_index_to_move;
 
     if (config->visualize_config.enable)
     {
