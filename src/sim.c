@@ -261,9 +261,16 @@ char get_best_piece(state_t* state_root, const short* dice_first, const minimax_
 
 float evaluate(const state_t* state_current, const state_t* state_new, const minimax_config_t* config)
 {
-    if (state_check_win(state_new, config))
+    if (state_check_win(state_new, config, config->player_0_maximize ? 0 : 1))
     {
+        // Max won
         return +FLT_MAX;
+    }
+
+    if (state_check_win(state_new, config, config->player_0_maximize ? 1 : 0))
+    {
+        // Min won
+        return -FLT_MAX;
     }
 
     const uint32_t pieces_new_player_max = config->player_0_maximize ? state_new->pieces_0 : state_new->pieces_1;
@@ -287,35 +294,58 @@ float evaluate(const state_t* state_current, const state_t* state_new, const min
 
         // Base points
         points_total += config->eval_config.points_base[piece_field];
+
         // Rosette Bonus
         const bool piece_on_rosette =
             piece_field == 5 || piece_field == 15 || (config->rosette_middle_safe && piece_field == 9);
         const bool piece_is_moved = state_current->moved_piece == piece_index;
         const bool state_changed = pieces_current_player_max != pieces_new_player_max;
-
         points_total +=
             (float)(state_changed && piece_is_moved && piece_on_rosette) * config->eval_config.adder_rosette;
 
-        if (piece_field == FIELD_START || piece_field == 14 || piece_field == 15 || piece_field == FIELD_FINISH)
+        // Improvement of state
+        if ((config->player_0_maximize && state_current->player_current == 0) ||
+            (!config->player_0_maximize && state_current->player_current == 1))
         {
-            // These pieces cannot kill any piece of other player and cannot be killed by other player
+            short count_pieces_other_player_start_current = 0;
+            for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
+            {
+                PIECE_FIELD_GET(piece_field, pieces_current_player_min, i);
+                if (piece_field == FIELD_START)
+                {
+                    count_pieces_other_player_start_current += 1;
+                }
+            }
+            short count_pieces_other_player_start_new = 0;
+            for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
+            {
+                PIECE_FIELD_GET(piece_field, pieces_new_player_min, i);
+                if (piece_field == FIELD_START)
+                {
+                    count_pieces_other_player_start_new += 1;
+                }
+            }
 
-            continue;
+            const bool kill_happens = count_pieces_other_player_start_new != count_pieces_other_player_start_current;
+            points_total += (float)kill_happens * config->eval_config.adder_kill_happens;
         }
 
         // Kill piece of other player
-        short count_killable_pieces_of_other_player = 0;
-        for (short i = 1; i <= MAX_DICE_THROW; i++)
+        if (piece_field > 1 && piece_field < 13)
         {
-            if (any_piece_on_field(pieces_new_player_min, piece_field + i, NULL, config))
+            short count_killable_pieces_of_other_player = 0;
+            for (short i = 1; i <= MAX_DICE_THROW; i++)
             {
-                count_killable_pieces_of_other_player += 1;
+                if (any_piece_on_field(pieces_new_player_min, piece_field + i, NULL, config))
+                {
+                    count_killable_pieces_of_other_player += 1;
+                }
             }
+            points_total += (float)count_killable_pieces_of_other_player * config->eval_config.multiplier_killable;
         }
-        points_total += (float)count_killable_pieces_of_other_player * config->eval_config.multiplier_killable;
 
         // Killed by other player
-        if (6 <= piece_field)
+        if (piece_field > 5 && piece_field < 14)
         {
             short count_attacker_pieces_of_other_player = 0;
             for (short i = 1; i <= MAX_DICE_THROW; i++)
@@ -327,33 +357,6 @@ float evaluate(const state_t* state_current, const state_t* state_new, const min
             }
             points_total += (float)count_attacker_pieces_of_other_player * config->eval_config.multiplier_attacker;
         }
-    }
-
-    if ((config->player_0_maximize && state_current->player_current == 0) ||
-        (!config->player_0_maximize && state_current->player_current == 1))
-    {
-        // Improvement of state
-        short count_pieces_other_player_start_current = 0;
-        for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
-        {
-            PIECE_FIELD_GET(piece_field, pieces_current_player_min, i);
-            if (piece_field == FIELD_START)
-            {
-                count_pieces_other_player_start_current += 1;
-            }
-        }
-        short count_pieces_other_player_start_new = 0;
-        for (size_t i = 0; i < config->num_of_pieces_per_player; i++)
-        {
-            PIECE_FIELD_GET(piece_field, pieces_new_player_min, i);
-            if (piece_field == FIELD_START)
-            {
-                count_pieces_other_player_start_new += 1;
-            }
-        }
-
-        const bool kill_happens = count_pieces_other_player_start_new != count_pieces_other_player_start_current;
-        points_total += (float)kill_happens * config->eval_config.adder_kill_happens;
     }
 
     return points_total;

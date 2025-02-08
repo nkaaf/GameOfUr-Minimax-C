@@ -68,12 +68,12 @@ void state_free(state_t* state)
 
 void state_reset_ids() { id = -1; }
 
-bool state_check_win(const state_t* state, const minimax_config_t* config)
+bool state_check_win(const state_t* state, const minimax_config_t* config, const short player)
 {
     assert(state != NULL && "state is null");
-    assert(state->player_current == 0 || state->player_current == 1 && "Player is incorrect");
+    assert(player == 0 || player == 1 && "Player is incorrect");
 
-    return (state->player_current == 0 ? state->score_0 : state->score_1) == config->num_of_pieces_per_player;
+    return (player == 0 ? state->score_0 : state->score_1) == config->num_of_pieces_per_player;
 }
 
 void state_swap_player(state_t* state)

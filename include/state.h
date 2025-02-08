@@ -33,7 +33,7 @@ void state_free(state_t* state);
 
 void state_reset_ids();
 
-bool state_check_win(const state_t* state, const minimax_config_t* config);
+bool state_check_win(const state_t* state, const minimax_config_t* config, short player);
 
 void state_swap_player(state_t* state);
 
