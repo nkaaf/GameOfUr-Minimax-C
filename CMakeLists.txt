@@ -10,8 +10,7 @@ set(SOURCES_Game
         src/common.c
         src/state.c
         src/sim.c
-        src/graphviz.c
-        src/visualize.c)
+        src/graphviz.c)
 
 set(SOURCES_Test
         test/main.c)
