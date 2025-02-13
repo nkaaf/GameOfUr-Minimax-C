@@ -5,6 +5,9 @@
 #include "state.h"
 
 // Public only for testing!
+void cleanup_children(const state_t *state_root);
+
+// Public only for testing!
 state_t *simulate(const state_t *state_current, short piece_index, short dice,
                   const minimax_config_t *config);
 
