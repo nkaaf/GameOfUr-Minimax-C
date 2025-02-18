@@ -300,50 +300,52 @@ float evaluation_for_player(const state_t *state_current,
     // Base points
     points_total += config->eval_config.points_base[piece_field];
 
-    // Killed piece of other player
-    short count_pieces_other_player_start_current = 0;
-    for (size_t i = 0; i < config->num_of_pieces_per_player; i++) {
-      PIECE_FIELD_GET(piece_field, pieces_current_player_other, i);
-      if (piece_field == FIELD_START) {
-        count_pieces_other_player_start_current += 1;
-      }
-    }
-    short count_pieces_other_player_start_new = 0;
-    for (size_t i = 0; i < config->num_of_pieces_per_player; i++) {
-      PIECE_FIELD_GET(piece_field, pieces_new_player_other, i);
-      if (piece_field == FIELD_START) {
-        count_pieces_other_player_start_new += 1;
-      }
-    }
-    const bool kill_happens = count_pieces_other_player_start_new !=
-                              count_pieces_other_player_start_current;
-    points_total +=
-        (float)kill_happens * config->eval_config.adder_kill_happens;
-
-    // Kill to other player piece is possible
-    if (piece_field > 1 && piece_field < 13) {
-      double probability = 0;
-      for (short i = 1; i <= MAX_DICE_THROW; i++) {
-        if (any_piece_on_field(pieces_new_player_other, piece_field + i, NULL,
-                               config)) {
-          probability += throw_probability[i];
+    if (player == config->player_to_maximize) {
+      // Killed piece of other player
+      short count_pieces_other_player_start_current = 0;
+      for (size_t i = 0; i < config->num_of_pieces_per_player; i++) {
+        PIECE_FIELD_GET(piece_field, pieces_current_player_other, i);
+        if (piece_field == FIELD_START) {
+          count_pieces_other_player_start_current += 1;
         }
       }
-      points_total +=
-          (float)config->eval_config.adder_kill_possible * probability;
-    }
-
-    // Kill to max player piece is possible
-    if (piece_field > 5 && piece_field < 14) {
-      double probability = 0;
-      for (short i = 1; i <= MAX_DICE_THROW; i++) {
-        if (any_piece_on_field(pieces_new_player_other, piece_field - i, NULL,
-                               config)) {
-          probability += throw_probability[i];
+      short count_pieces_other_player_start_new = 0;
+      for (size_t i = 0; i < config->num_of_pieces_per_player; i++) {
+        PIECE_FIELD_GET(piece_field, pieces_new_player_other, i);
+        if (piece_field == FIELD_START) {
+          count_pieces_other_player_start_new += 1;
         }
       }
+      const bool kill_happens = count_pieces_other_player_start_new !=
+                                count_pieces_other_player_start_current;
       points_total +=
-          (float)config->eval_config.adder_attack_possible * probability;
+          (float)kill_happens * config->eval_config.adder_kill_happens;
+
+      // Kill to other player piece is possible
+      if (piece_field > 1 && piece_field < 13) {
+        double probability = 0;
+        for (short i = 1; i <= MAX_DICE_THROW; i++) {
+          if (any_piece_on_field(pieces_new_player_other, piece_field + i, NULL,
+                                 config)) {
+            probability += throw_probability[i];
+                                 }
+        }
+        points_total +=
+            (float)config->eval_config.adder_kill_possible * probability;
+      }
+
+      // Kill to max player piece is possible
+      if (piece_field > 5 && piece_field < 14) {
+        double probability = 0;
+        for (short i = 1; i <= MAX_DICE_THROW; i++) {
+          if (any_piece_on_field(pieces_new_player_other, piece_field - i, NULL,
+                                 config)) {
+            probability += throw_probability[i];
+                                 }
+        }
+        points_total +=
+            (float)config->eval_config.adder_attack_possible * probability;
+      }
     }
   }
 
