@@ -138,12 +138,14 @@ void calculate_all_children_of_piece(state_t *state, const short piece_index,
 
 void minimax(state_t *state_current, const size_t depth, const bool maximize,
              const short *dice, size_t *piece_index_to_move,
-             const minimax_config_t *config) {
-  if (depth == 0) {
+             const minimax_config_t *config, const float alpha,
+             const float beta) {
+  if (depth == 0 ||
+      state_check_win(state_current, config, state_current->player_current)) {
     state_current->eval =
         evaluate(state_current->parent, state_current, config);
   } else {
-    float evaluation_score = maximize ? -FLT_MAX : +FLT_MAX;
+    float evaluation_score = maximize ? alpha : beta;
     for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player;
          piece_index++) {
       const size_t child_count_before = state_current->child_count;
@@ -171,14 +173,17 @@ void minimax(state_t *state_current, const size_t depth, const bool maximize,
         const bool maximize_next_level =
             config->player_to_maximize == child->player_current;
 
+        const float alpha_next = maximize ? evaluation_score : alpha;
+        const float beta_next = maximize ? beta : evaluation_score;
+
         minimax(child, depth - 1, maximize_next_level, NULL,
-                piece_index_to_move, config);
+                piece_index_to_move, config, alpha_next, beta_next);
 
         expecting_value_acc += child->eval * throw_probability[child->dice];
         dices_of_child[child->dice] == 0;
       }
 
-      // Add evaluation of unchanged states ("not possible dices)
+      // Add evaluation of unchanged states ("not possible dices")
       // This is important to preserve the sum of 1 for all probabilities
       const float eval_current = evaluate(state_current, state_current, config);
       for (size_t i = 0; i < DICE_RANGE_TRUE; i++) {
@@ -188,32 +193,22 @@ void minimax(state_t *state_current, const size_t depth, const bool maximize,
         }
       }
 
-      // This is used to check if evaluation score has
-      // changed; this prevents that same
-      // evaluation scores changed the piece to move
-      const float evaluation_score_tmp = evaluation_score;
-
-      evaluation_score = maximize
-                             ? fmaxf(expecting_value_acc, evaluation_score)
-                             : fminf(expecting_value_acc, evaluation_score);
-      if (depth == config->depth && evaluation_score_tmp != evaluation_score &&
-          evaluation_score == expecting_value_acc) {
-        // This piece should be moved (current knowledge)
-        *piece_index_to_move = piece_index;
-      }
-
-      if (config->alpha_beta_pruning_enable) {
-        //printf("Expecting: %f - Max: %i - cur a: %f - cur b: %f\n", expecting_value_acc,maximize,
-        //       state_current->alpha, state_current->beta);
-        if (maximize) {
-          state_current->alpha =
-              fmaxf(expecting_value_acc, state_current->alpha);
-        } else {
-          state_current->beta = fminf(expecting_value_acc, state_current->beta);
+      if (maximize) {
+        if (expecting_value_acc > evaluation_score) {
+          evaluation_score = expecting_value_acc;
+          if (depth == config->depth) {
+            *piece_index_to_move = piece_index;
+          }
+          if (config->alpha_beta_pruning_enable && evaluation_score >= beta) {
+            break;
+          }
         }
-        if (state_current->beta <= state_current->alpha) {
-          printf("Prune\n");
-          break;
+      } else {
+        if (expecting_value_acc < evaluation_score) {
+          evaluation_score = expecting_value_acc;
+          if (config->alpha_beta_pruning_enable && evaluation_score <= alpha) {
+            break;
+          }
         }
       }
     }
@@ -231,10 +226,13 @@ void minimax(state_t *state_current, const size_t depth, const bool maximize,
       // Check if the next level is to maximize or to minimize ("fix" for second
       // throw)
       const bool maximize_next_level =
-          config->player_to_maximize == state_current->player_current;
+        config->player_to_maximize == state_current->player_current;
+
+      const float alpha_next = maximize ? evaluation_score : alpha;
+      const float beta_next = maximize ? beta : evaluation_score;
 
       minimax(state_unchanged, depth - 1, maximize_next_level, NULL,
-              piece_index_to_move, config);
+              piece_index_to_move, config, alpha_next, beta_next);
 
       evaluation_score = state_unchanged->eval;
     }
@@ -268,7 +266,7 @@ size_t get_best_piece(state_t *state_root, const short *dice_first,
 
   size_t piece_index_to_move;
   (void)minimax(state_root, config->depth, true, dice_first,
-                &piece_index_to_move, config);
+                &piece_index_to_move, config, -FLT_MAX, +FLT_MAX);
 
   if (config->visualize_config.enable) {
     visualize_finalize();
@@ -280,41 +278,39 @@ size_t get_best_piece(state_t *state_root, const short *dice_first,
   return piece_index_to_move;
 }
 
-float evaluate(const state_t *state_current, const state_t *state_new,
-               const minimax_config_t *config) {
-  const uint32_t pieces_new_player_max = config->player_to_maximize == 0
-                                             ? state_new->pieces_0
-                                             : state_new->pieces_1;
-  const uint32_t pieces_new_player_min = config->player_to_maximize == 0
-                                             ? state_new->pieces_1
-                                             : state_new->pieces_0;
-  const uint32_t pieces_current_player_min =
-      state_new->second_throw && config->player_to_maximize == 0
-          ? state_current->pieces_1
-      : state_new->second_throw         ? state_current->pieces_0
-      : config->player_to_maximize == 0 ? state_current->pieces_1
-                                        : state_current->pieces_0;
+float evaluation_for_player(const state_t *state_current,
+                            const state_t *state_new,
+                            const minimax_config_t *config, short player) {
+  const uint32_t pieces_new_player =
+      player == 0 ? state_new->pieces_0 : state_new->pieces_1;
+  const uint32_t pieces_new_player_other =
+      player == 0 ? state_new->pieces_1 : state_new->pieces_0;
+  const uint32_t pieces_current_player_other =
+      state_new->second_throw && player == 0 ? state_current->pieces_1
+      : state_new->second_throw              ? state_current->pieces_0
+      : player == 0                          ? state_current->pieces_1
+                                             : state_current->pieces_0;
 
   float points_total = 0.0f;
 
   for (size_t piece_index = 0; piece_index < config->num_of_pieces_per_player;
        piece_index++) {
-    PIECE_FIELD_GET(piece_field, pieces_new_player_max, piece_index);
+    PIECE_FIELD_GET(piece_field, pieces_new_player, piece_index);
 
     // Base points
     points_total += config->eval_config.points_base[piece_field];
 
-    // Killed piece of min player
+    // Killed piece of other player
     short count_pieces_other_player_start_current = 0;
     for (size_t i = 0; i < config->num_of_pieces_per_player; i++) {
-      PIECE_FIELD_GET(piece_field, pieces_current_player_min, i);
+      PIECE_FIELD_GET(piece_field, pieces_current_player_other, i);
       if (piece_field == FIELD_START) {
         count_pieces_other_player_start_current += 1;
       }
     }
     short count_pieces_other_player_start_new = 0;
     for (size_t i = 0; i < config->num_of_pieces_per_player; i++) {
-      PIECE_FIELD_GET(piece_field, pieces_new_player_min, i);
+      PIECE_FIELD_GET(piece_field, pieces_new_player_other, i);
       if (piece_field == FIELD_START) {
         count_pieces_other_player_start_new += 1;
       }
@@ -324,11 +320,11 @@ float evaluate(const state_t *state_current, const state_t *state_new,
     points_total +=
         (float)kill_happens * config->eval_config.adder_kill_happens;
 
-    // Kill to min player piece is possible
+    // Kill to other player piece is possible
     if (piece_field > 1 && piece_field < 13) {
       double probability = 0;
       for (short i = 1; i <= MAX_DICE_THROW; i++) {
-        if (any_piece_on_field(pieces_new_player_min, piece_field + i, NULL,
+        if (any_piece_on_field(pieces_new_player_other, piece_field + i, NULL,
                                config)) {
           probability += throw_probability[i];
         }
@@ -341,7 +337,7 @@ float evaluate(const state_t *state_current, const state_t *state_new,
     if (piece_field > 5 && piece_field < 14) {
       double probability = 0;
       for (short i = 1; i <= MAX_DICE_THROW; i++) {
-        if (any_piece_on_field(pieces_new_player_min, piece_field - i, NULL,
+        if (any_piece_on_field(pieces_new_player_other, piece_field - i, NULL,
                                config)) {
           probability += throw_probability[i];
         }
@@ -351,12 +347,16 @@ float evaluate(const state_t *state_current, const state_t *state_new,
     }
   }
 
-  if (state_check_win(state_new, config,
-                      config->player_to_maximize == 0 ? 1 : 0)) {
-    // Min won
-    // https://de.wikipedia.org/wiki/Expectiminimax-Algorithmus#Bewertungsfunktion
-    points_total += config->eval_config.adder_lose;
-  }
-
   return points_total;
+}
+
+float evaluate(const state_t *state_current, const state_t *state_new,
+               const minimax_config_t *config) {
+  const float eval_player_max = evaluation_for_player(
+      state_current, state_new, config, config->player_to_maximize);
+  const float eval_player_min =
+      evaluation_for_player(state_current, state_new, config,
+                            config->player_to_maximize == 0 ? 1 : 0);
+
+  return eval_player_max - eval_player_min;
 }

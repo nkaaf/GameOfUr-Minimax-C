@@ -36,8 +36,6 @@ state_t *state_init(const short score_0, const short score_1,
   state->second_throw = false;
 
   state->eval = 0;
-  state->alpha = -FLT_MAX;
-  state->beta = +FLT_MAX;
 
   state->parent = NULL;
 

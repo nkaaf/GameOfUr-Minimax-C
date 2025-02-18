@@ -19,7 +19,7 @@ struct state_s {
   uint8_t moved_piece;
   bool second_throw;
 
-  float eval, alpha, beta;
+  float eval;
 
   state_t *parent;
   state_t **children;

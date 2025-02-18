@@ -30,7 +30,6 @@ int main(void) {
               .points_base = points_base,
               .adder_attack_possible = -100,
               .adder_kill_possible = 2,
-              .adder_lose = -100,
               .adder_kill_happens = 10,
           },
       .visualize_config = {.enable = true, .graph_path = "Graph.gv"}};

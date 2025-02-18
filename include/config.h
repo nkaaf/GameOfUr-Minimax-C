@@ -13,8 +13,7 @@ typedef struct {
 typedef struct {
   float *points_base;
 
-  float adder_lose, adder_kill_possible, adder_attack_possible,
-      adder_kill_happens;
+  float adder_kill_possible, adder_attack_possible, adder_kill_happens;
 } minimax_config_eval_t;
 
 typedef struct {
