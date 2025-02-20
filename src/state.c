@@ -118,9 +118,9 @@ bool state_equals(const state_t *state1, const state_t *state2) {
          state1->dice == state2->dice &&
          state1->moved_piece == state2->moved_piece &&
          state1->second_throw == state2->second_throw &&
-         state1->parent == state1->parent &&
-         state1->children == state1->children && state1->eval == state1->eval &&
-         state1->child_count == state1->child_count;
+         state1->parent == state2->parent &&
+         state1->children == state2->children && state1->eval == state2->eval &&
+         state1->child_count == state2->child_count;
 }
 
 void state_iterate_over_all_children_and_execute(const state_t *state,

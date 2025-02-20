@@ -10,6 +10,9 @@
 #include "graphviz.h"
 
 #include <float.h>
+#include <time.h>
+
+#define BILLION 1000000000L
 
 void cleanup_children(const state_t *state_root) {
   state_iterate_over_all_children_and_execute(state_root, state_free);
@@ -136,10 +139,21 @@ void calculate_all_children_of_piece(state_t *state, const short piece_index,
   }
 }
 
+#ifdef BENCHMARK_MINIMAX
+int *counts, *countsab;
+#endif
+
 void minimax(state_t *state_current, const size_t depth, const bool maximize,
              const short *dice, size_t *piece_index_to_move,
              const minimax_config_t *config, const float alpha,
              const float beta) {
+#ifdef BENCHMARK_MINIMAX
+  if (config->alpha_beta_pruning_enable) {
+    countsab[config->depth - depth] += 1;
+  } else {
+    counts[config->depth - depth] += 1;
+  }
+#endif
   if (depth == 0 ||
       state_check_win(state_current, config, state_current->player_current)) {
     state_current->eval =
@@ -180,7 +194,7 @@ void minimax(state_t *state_current, const size_t depth, const bool maximize,
                 piece_index_to_move, config, alpha_next, beta_next);
 
         expecting_value_acc += child->eval * throw_probability[child->dice];
-        dices_of_child[child->dice] == 0;
+        dices_of_child[child->dice] = 0;
       }
 
       // Add evaluation of unchanged states ("not possible dices")
@@ -226,7 +240,7 @@ void minimax(state_t *state_current, const size_t depth, const bool maximize,
       // Check if the next level is to maximize or to minimize ("fix" for second
       // throw)
       const bool maximize_next_level =
-        config->player_to_maximize == state_current->player_current;
+          config->player_to_maximize == state_current->player_current;
 
       const float alpha_next = maximize ? evaluation_score : alpha;
       const float beta_next = maximize ? beta : evaluation_score;
@@ -259,19 +273,70 @@ void minimax(state_t *state_current, const size_t depth, const bool maximize,
 }
 
 size_t get_best_piece(state_t *state_root, const short *dice_first,
-                      const minimax_config_t *config) {
+                      minimax_config_t *config
+#ifdef BENCHMARK_MINIMAX
+                      ,
+                      FILE **logs
+#endif
+) {
   if (config->visualize_config.enable) {
     visualize_init(config->visualize_config.graph_path);
   }
 
+#ifdef BENCHMARK_MINIMAX
+  countsab = calloc(config->depth, sizeof(int));
+  counts = calloc(config->depth, sizeof(int));
+#endif
+
   size_t piece_index_to_move;
+
+#ifdef BENCHMARK_MINIMAX
+  struct timespec start = {0, 0}, end = {0, 0};
+  clock_gettime(CLOCK_MONOTONIC, &start);
+#endif
   (void)minimax(state_root, config->depth, true, dice_first,
                 &piece_index_to_move, config, -FLT_MAX, +FLT_MAX);
+#ifdef BENCHMARK_MINIMAX
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  uint64_t diff =
+      BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+  fprintf(logs[2], "%llu\n", diff);
+  fflush(logs[2]);
+
+  for (int i = 0; i <= config->depth; i++) {
+    fprintf(logs[0], "%i,%i\n", i, countsab[i]);
+  }
+  fputs("-\n", logs[0]);
+  fflush(logs[0]);
+
+  config->alpha_beta_pruning_enable = false;
+
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  size_t tmp;
+  (void)minimax(state_root, config->depth, true, dice_first, &tmp, config,
+                -FLT_MAX, +FLT_MAX);
+  config->alpha_beta_pruning_enable = true;
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+  fprintf(logs[3], "%llu\n", diff);
+  fflush(logs[3]);
+
+  for (int i = 0; i <= config->depth; i++) {
+    fprintf(logs[1], "%i,%i\n", i, counts[i]);
+  }
+  fputs("-\n", logs[1]);
+  fflush(logs[1]);
+#endif
 
   if (config->visualize_config.enable) {
     visualize_finalize();
     visualize_free();
   }
+
+#ifdef BENCHMARK_MINIMAX
+  free(countsab);
+  free(counts);
+#endif
 
   state_reset_ids();
 
@@ -328,7 +393,7 @@ float evaluation_for_player(const state_t *state_current,
           if (any_piece_on_field(pieces_new_player_other, piece_field + i, NULL,
                                  config)) {
             probability += throw_probability[i];
-                                 }
+          }
         }
         points_total +=
             (float)config->eval_config.adder_kill_possible * probability;
@@ -341,7 +406,7 @@ float evaluation_for_player(const state_t *state_current,
           if (any_piece_on_field(pieces_new_player_other, piece_field - i, NULL,
                                  config)) {
             probability += throw_probability[i];
-                                 }
+          }
         }
         points_total +=
             (float)config->eval_config.adder_attack_possible * probability;
