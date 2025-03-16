@@ -88,9 +88,9 @@ def boxplot(data, edge_color, fill_color):
 
 fig, ax = plt.subplots()
 
-ax.set_title(f"Average Time per Move")
+ax.set_title(f"Time per Move")
 ax.set_xlabel("Depth Limit")
-ax.set_ylabel("computation time in ns")
+ax.set_ylabel("Time (ns)")
 ax.set_yscale("log")
 
 bp1 = boxplot(data_with_ab, 'red', 'tan')
